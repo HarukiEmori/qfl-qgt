@@ -1,0 +1,11 @@
+# Versions installed in /Users/haruki/Develop/venv/pytket-dev as read on 2026-10-21
+# (Python 3.12; the notebook metadata records 3.12.12).
+# Whether these are exactly the versions used when the notebook was last run (2026-03-24) is unverified.
+numpy==2.3.4
+matplotlib==3.10.3
+scikit-learn==1.8.0
+joblib==1.5.3
+qiskit==2.2.2
+qiskit-aer==0.17.2
+jupyterlab==4.4.5
+ipykernel==6.30.0
