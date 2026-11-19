@@ -1,0 +1,14 @@
+{
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "segments": 528,
+ "segments_schedule": [
+  "5:816"
+ ]
+}

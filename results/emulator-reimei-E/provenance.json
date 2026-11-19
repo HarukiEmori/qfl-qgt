@@ -1,0 +1,2403 @@
+{
+ "task": "federated training of several runs in lockstep",
+ "entry": "scripts/run_emulator.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x300"
+  ],
+  "cache": "results/emulator-reimei-E/cache"
+ },
+ "parameters": {
+  "scenarios": [
+   "emulator_iid",
+   "emulator_dirichlet"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "methods": [
+   "QFedAvg",
+   "QFedFisher",
+   "QFedQGT"
+  ],
+  "rounds": 15,
+  "batch": 2,
+  "echo_shots": 5,
+  "eval_shots": 20,
+  "eval_inputs": 60,
+  "shots_per_circuit": {
+   "emulator_iid": [
+    1,
+    30
+   ],
+   "emulator_dirichlet": [
+    1,
+    30
+   ]
+  },
+  "error_rate_multipliers": {
+   "emulator_iid": [
+    1.0,
+    300.0
+   ],
+   "emulator_dirichlet": [
+    1.0,
+    300.0
+   ]
+  },
+  "learning_rates": {
+   "emulator_iid": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "emulator_dirichlet": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   }
+  },
+  "segments": 528,
+  "programs_per_job": 1,
+  "segments_schedule": [
+   "5:816"
+  ]
+ },
+ "started": "2026-11-19T04:53:35-0800",
+ "finished": "2026-11-19T10:10:42-0800",
+ "duration_s": 19027.3,
+ "jobs": [
+  {
+   "job_id": "5cabf975-cd0d-4ac9-b8b1-889451e48a6d",
+   "name": "emulator-reimei-E-0001-reimei-E-x1-p6-c2496-032649",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:26:58-0800",
+   "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
+   "modified": false,
+   "completed": "2026-11-19T03:53:20-0800",
+   "cost": 756.312,
+   "source": "cache"
+  },
+  {
+   "job_id": "6a1dcd97-5d2b-4b8a-aff0-629820dbfa6d",
+   "name": "emulator-reimei-E-0002-reimei-E-x1-p6-c2496-032658",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5,
+    30
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:27:04-0800",
+   "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
+   "modified": false,
+   "completed": "2026-11-19T03:53:22-0800",
+   "cost": 424.92,
+   "source": "cache"
+  },
+  {
+   "job_id": "276d3d02-2d24-401d-b825-ec9fc3de0bca",
+   "name": "emulator-reimei-E-0003-reimei-E-x300-p6-c2496-032704",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:27:15-0800",
+   "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
+   "modified": false,
+   "completed": "2026-11-19T03:53:24-0800",
+   "cost": 39.7104,
+   "source": "cache"
+  },
+  {
+   "job_id": "3816d296-b918-425e-b91b-53f7c79c6409",
+   "name": "emulator-reimei-E-0004-reimei-E-x300-p6-c2496-032715",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1,
+    5
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:27:21-0800",
+   "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
+   "modified": false,
+   "completed": "2026-11-19T03:53:26-0800",
+   "cost": 34.0464,
+   "source": "cache"
+  },
+  {
+   "job_id": "388ba6ed-29e3-4bcb-9da4-a2a8fdfd3888",
+   "name": "emulator-reimei-E-0001-reimei-E-x1-p6-c2496-035326",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:53:34-0800",
+   "commit": "8c2abeac7e7a969a48c9999f3f28458cdd0773dd",
+   "modified": false,
+   "completed": "2026-11-19T04:12:01-0800",
+   "cost": 756.312,
+   "source": "cache"
+  },
+  {
+   "job_id": "76634290-bca9-4b97-a545-94d1db989120",
+   "name": "emulator-reimei-E-0002-reimei-E-x1-p6-c2496-035334",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5,
+    30
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:53:39-0800",
+   "commit": "8c2abeac7e7a969a48c9999f3f28458cdd0773dd",
+   "modified": false,
+   "completed": "2026-11-19T04:19:27-0800",
+   "cost": 424.92,
+   "source": "cache"
+  },
+  {
+   "job_id": "45f2dd86-7e0a-44a9-8248-d214cf9d6ba8",
+   "name": "emulator-reimei-E-0003-reimei-E-x300-p6-c2496-035339",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:53:47-0800",
+   "commit": "8c2abeac7e7a969a48c9999f3f28458cdd0773dd",
+   "modified": false,
+   "completed": "2026-11-19T04:19:30-0800",
+   "cost": 39.7104,
+   "source": "cache"
+  },
+  {
+   "job_id": "1ee71f71-8485-4d49-8b79-e337bd163787",
+   "name": "emulator-reimei-E-0004-reimei-E-x300-p6-c2496-035347",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1,
+    5
+   ],
+   "programs": 3,
+   "submitted": "2026-11-19T03:53:53-0800",
+   "commit": "8c2abeac7e7a969a48c9999f3f28458cdd0773dd",
+   "modified": false,
+   "completed": "2026-11-19T04:19:31-0800",
+   "cost": 34.0464,
+   "source": "cache"
+  },
+  {
+   "job_id": "048189f1-31ff-442e-9038-f25f4eb97641",
+   "name": "emulator-reimei-E-0001-reimei-E-x1-p6-c2496-041931",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:35-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:34:54-0800",
+   "cost": 252.104,
+   "source": "cache"
+  },
+  {
+   "job_id": "8ad1e1bc-d525-4118-822a-dcd89113040e",
+   "name": "emulator-reimei-E-0002-reimei-E-x1-p6-c2496-041935",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:38-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:37:58-0800",
+   "cost": 252.104,
+   "source": "cache"
+  },
+  {
+   "job_id": "6af8b078-7128-4b18-8115-8634c06992f7",
+   "name": "emulator-reimei-E-0003-reimei-E-x1-p6-c2496-041938",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:42-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:03-0800",
+   "cost": 252.104,
+   "source": "cache"
+  },
+  {
+   "job_id": "7d1df2c3-ee3c-4e76-8014-017fd1497b7c",
+   "name": "emulator-reimei-E-0004-reimei-E-x1-p6-c2496-041942",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:46-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:04-0800",
+   "cost": 252.104,
+   "source": "cache"
+  },
+  {
+   "job_id": "b5ec87cd-6a2c-4634-9881-86f277c88a20",
+   "name": "emulator-reimei-E-0005-reimei-E-x1-p6-c2496-041946",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:47-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:05-0800",
+   "cost": 162.248,
+   "source": "cache"
+  },
+  {
+   "job_id": "756e2faa-2de9-4335-9bc6-498c30f517ff",
+   "name": "emulator-reimei-E-0006-reimei-E-x1-p6-c2496-041947",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:48-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:06-0800",
+   "cost": 10.568,
+   "source": "cache"
+  },
+  {
+   "job_id": "65697eb5-2a81-4ef4-812f-8bb7011a26b8",
+   "name": "emulator-reimei-E-0007-reimei-E-x300-p6-c2496-041948",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:51-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:07-0800",
+   "cost": 13.2368,
+   "source": "cache"
+  },
+  {
+   "job_id": "0b17a3c0-c3e5-4de3-b2d8-9afa8b9c77bc",
+   "name": "emulator-reimei-E-0008-reimei-E-x300-p6-c2496-041951",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:55-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:08-0800",
+   "cost": 13.2368,
+   "source": "cache"
+  },
+  {
+   "job_id": "bbc1fb5e-9448-4d56-babe-f6d16eda100d",
+   "name": "emulator-reimei-E-0009-reimei-E-x300-p6-c2496-041955",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:19:59-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:09-0800",
+   "cost": 13.2368,
+   "source": "cache"
+  },
+  {
+   "job_id": "ceff0088-a187-4656-b0a0-a82fc2ea173c",
+   "name": "emulator-reimei-E-0010-reimei-E-x300-p6-c2496-041959",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:20:02-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:10-0800",
+   "cost": 13.2368,
+   "source": "cache"
+  },
+  {
+   "job_id": "15d46935-70e7-4e74-a2da-f74677c57711",
+   "name": "emulator-reimei-E-0011-reimei-E-x300-p6-c2496-042002",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:20:04-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:11-0800",
+   "cost": 10.2416,
+   "source": "cache"
+  },
+  {
+   "job_id": "2e96519e-17cb-4bf3-b0aa-fd7ad2c8f55e",
+   "name": "emulator-reimei-E-0012-reimei-E-x300-p6-c2496-042004",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:20:04-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T04:46:11-0800",
+   "cost": 10.568,
+   "source": "cache"
+  },
+  {
+   "job_id": "6c719dcd-8752-442f-a754-6b87d9588826",
+   "name": "emulator-reimei-E-0013-reimei-E-x1-p6-c2496-044611",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:15-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:01:23-0800",
+   "cost": 252.104,
+   "source": "reattached"
+  },
+  {
+   "job_id": "e7879d7b-9a7f-43f7-925d-f6159bda348e",
+   "name": "emulator-reimei-E-0014-reimei-E-x1-p6-c2496-044615",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:18-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:30-0800",
+   "cost": 252.104,
+   "source": "reattached"
+  },
+  {
+   "job_id": "250c2f25-f370-4104-b6a4-edcf8ca719d9",
+   "name": "emulator-reimei-E-0015-reimei-E-x1-p6-c2496-044618",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:22-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:32-0800",
+   "cost": 252.104,
+   "source": "reattached"
+  },
+  {
+   "job_id": "921fa7f8-fb60-4e62-9a28-b0925cc2443f",
+   "name": "emulator-reimei-E-0016-reimei-E-x1-p6-c2496-044622",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:26-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:33-0800",
+   "cost": 252.104,
+   "source": "reattached"
+  },
+  {
+   "job_id": "4611e780-68fa-4a56-a6cb-65be06f448fc",
+   "name": "emulator-reimei-E-0017-reimei-E-x1-p6-c2496-044626",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:28-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:34-0800",
+   "cost": 162.248,
+   "source": "reattached"
+  },
+  {
+   "job_id": "281af2bd-782c-403b-b230-d7173627f90f",
+   "name": "emulator-reimei-E-0018-reimei-E-x1-p6-c2496-044628",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:28-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:34-0800",
+   "cost": 10.568,
+   "source": "reattached"
+  },
+  {
+   "job_id": "cf5996fe-5966-4768-8996-e748af29f0b9",
+   "name": "emulator-reimei-E-0019-reimei-E-x300-p6-c2496-044628",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:32-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:35-0800",
+   "cost": 13.2368,
+   "source": "reattached"
+  },
+  {
+   "job_id": "5d146f35-c3d3-451c-b267-c194b2582281",
+   "name": "emulator-reimei-E-0020-reimei-E-x300-p6-c2496-044632",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:36-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:36-0800",
+   "cost": 13.2368,
+   "source": "reattached"
+  },
+  {
+   "job_id": "13c2b587-ccff-4ce6-b052-69ea6a25da60",
+   "name": "emulator-reimei-E-0021-reimei-E-x300-p6-c2496-044636",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:39-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:37-0800",
+   "cost": 13.2368,
+   "source": "reattached"
+  },
+  {
+   "job_id": "885d0910-a00e-4d90-ac74-f35a4fd249b1",
+   "name": "emulator-reimei-E-0022-reimei-E-x300-p6-c2496-044639",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:43-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:38-0800",
+   "cost": 13.2368,
+   "source": "reattached"
+  },
+  {
+   "job_id": "fd3fd558-1df7-4187-b062-d0070c433174",
+   "name": "emulator-reimei-E-0023-reimei-E-x300-p6-c2496-044643",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:45-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:39-0800",
+   "cost": 10.2416,
+   "source": "reattached"
+  },
+  {
+   "job_id": "82370a03-701d-4d37-9643-8943bf1941b4",
+   "name": "emulator-reimei-E-0024-reimei-E-x300-p6-c2496-044645",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T04:46:46-0800",
+   "commit": "bb09adbb9f1fccc3fbae7118986c111c766cfb11",
+   "modified": false,
+   "completed": "2026-11-19T05:12:39-0800",
+   "cost": 10.568,
+   "source": "reattached"
+  },
+  {
+   "job_id": "9ab5990c-5c75-4254-8305-7ac2a601a545",
+   "name": "emulator-reimei-E-0001-reimei-E-x1-p4-c2496-051239",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:12:47-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:31:37-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "57df533d-f49f-46a5-8343-999fec6c6c1f",
+   "name": "emulator-reimei-E-0002-reimei-E-x1-p4-c2496-051247",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:12:55-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:43-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3f61bcea-10d6-4aa0-adf1-afeffb171e81",
+   "name": "emulator-reimei-E-0003-reimei-E-x1-p4-c2496-051255",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:02-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:44-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8b007eb6-d402-41df-9ca2-95bbfad2deeb",
+   "name": "emulator-reimei-E-0004-reimei-E-x1-p4-c2496-051302",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:02-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:45-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "b3f8f607-06aa-4f4d-8652-068f2bd4fc01",
+   "name": "emulator-reimei-E-0005-reimei-E-x300-p4-c2496-051302",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:09-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:46-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "d29142c0-2d98-4cb2-bb41-35782c7ffae2",
+   "name": "emulator-reimei-E-0006-reimei-E-x300-p4-c2496-051309",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:17-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:48-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "98bc85c2-9d98-41f1-adb4-d7f90942d464",
+   "name": "emulator-reimei-E-0007-reimei-E-x300-p4-c2496-051317",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:24-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:49-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "5bb18c55-737b-466a-92d6-4db0a36e636c",
+   "name": "emulator-reimei-E-0008-reimei-E-x300-p4-c2496-051324",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:13:24-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:36:50-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "5f5e93c5-8a77-4dad-808a-a747930bae4a",
+   "name": "emulator-reimei-E-0009-reimei-E-x1-p4-c2496-053650",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:36:57-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:55:47-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8baa4d78-f60c-404a-a436-75ee9314516e",
+   "name": "emulator-reimei-E-0010-reimei-E-x1-p4-c2496-053657",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:04-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T05:55:49-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "dab9fbfc-d5aa-425a-b9f4-0b8af5c6a33d",
+   "name": "emulator-reimei-E-0011-reimei-E-x1-p4-c2496-053704",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:11-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:14-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "024648ee-f140-4d19-91da-f40e09e09ce7",
+   "name": "emulator-reimei-E-0012-reimei-E-x1-p4-c2496-053711",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:11-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:14-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "c1b73b52-1833-460e-953e-4bad7ffcb057",
+   "name": "emulator-reimei-E-0013-reimei-E-x300-p4-c2496-053711",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:19-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:16-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "f07ac769-b87a-47fe-9815-e17b61c0f6e3",
+   "name": "emulator-reimei-E-0014-reimei-E-x300-p4-c2496-053719",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:26-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:17-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8c970a56-8b1e-4a86-a80b-567c8176bc59",
+   "name": "emulator-reimei-E-0015-reimei-E-x300-p4-c2496-053726",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:33-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:18-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "6d583b16-6557-4ef6-8c3d-a4554cfd9f9e",
+   "name": "emulator-reimei-E-0016-reimei-E-x300-p4-c2496-053733",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T05:37:34-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:00:19-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "a49f6051-9a3f-4d72-8477-dead407114df",
+   "name": "emulator-reimei-E-0017-reimei-E-x1-p4-c2496-060019",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:26-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:19:39-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "a9e828a2-f112-4244-88a1-e391ad936b38",
+   "name": "emulator-reimei-E-0018-reimei-E-x1-p4-c2496-060026",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:34-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:23-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8747e7b1-e5c4-4586-95f6-1de8c222d25b",
+   "name": "emulator-reimei-E-0019-reimei-E-x1-p4-c2496-060034",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:41-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:25-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "ef3a1c29-7888-4882-9447-965fa257896a",
+   "name": "emulator-reimei-E-0020-reimei-E-x1-p4-c2496-060041",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:41-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:26-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "225e9e10-bb63-47fa-8131-e6cdb3587f56",
+   "name": "emulator-reimei-E-0021-reimei-E-x300-p4-c2496-060041",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:49-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:27-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "68a5feef-defe-482b-be59-a6d2c6d5cb94",
+   "name": "emulator-reimei-E-0022-reimei-E-x300-p4-c2496-060049",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:00:57-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:29-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "1e527ffd-551d-4866-85d1-f90dec48b74d",
+   "name": "emulator-reimei-E-0023-reimei-E-x300-p4-c2496-060057",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:01:05-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:30-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0d2d857e-d6f0-4af6-abe3-c20924b1c94c",
+   "name": "emulator-reimei-E-0024-reimei-E-x300-p4-c2496-060105",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:01:06-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:24:30-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "ba371e94-cf48-4d22-97db-5b5c09044db3",
+   "name": "emulator-reimei-E-0025-reimei-E-x1-p4-c2496-062430",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:24:38-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:43:30-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "04216b5e-103a-4770-9fc4-d6dbd3d78365",
+   "name": "emulator-reimei-E-0026-reimei-E-x1-p4-c2496-062438",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:24:45-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:43:52-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "45e79d3f-7258-4158-9fa9-26214a438b86",
+   "name": "emulator-reimei-E-0027-reimei-E-x1-p4-c2496-062445",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:24:52-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:17-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "69446da7-f2d4-486f-8f63-36acc577c899",
+   "name": "emulator-reimei-E-0028-reimei-E-x1-p4-c2496-062452",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:24:53-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:17-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0db93ecc-be3e-41e4-8213-4e55b56bf674",
+   "name": "emulator-reimei-E-0029-reimei-E-x300-p4-c2496-062453",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:25:00-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:19-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "a5e7ca19-665f-412b-9087-7fa0ede6d2a6",
+   "name": "emulator-reimei-E-0030-reimei-E-x300-p4-c2496-062500",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:25:07-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:20-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9a620ecf-28ac-42ae-9251-4d960f8cda52",
+   "name": "emulator-reimei-E-0031-reimei-E-x300-p4-c2496-062507",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:25:15-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:21-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "ad8b0dac-1eb8-4dcd-8457-d8c56aca98c6",
+   "name": "emulator-reimei-E-0032-reimei-E-x300-p4-c2496-062515",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:25:16-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T06:48:21-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "668c87fb-72f1-40aa-b1d7-9ec19895793d",
+   "name": "emulator-reimei-E-0033-reimei-E-x1-p4-c2496-064821",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:29-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:07:00-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "84059878-bee4-4f7c-84fd-ca35fc167a4a",
+   "name": "emulator-reimei-E-0034-reimei-E-x1-p4-c2496-064829",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:36-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:08:43-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "eece0ef2-c9d3-43df-884c-395e750fb917",
+   "name": "emulator-reimei-E-0035-reimei-E-x1-p4-c2496-064836",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:44-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:47-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "e7b5725b-3b86-4774-9735-6e29d143c8d5",
+   "name": "emulator-reimei-E-0036-reimei-E-x1-p4-c2496-064844",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:45-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:48-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "d60517ba-d0fa-4f8a-b223-371e4d95cff8",
+   "name": "emulator-reimei-E-0037-reimei-E-x300-p4-c2496-064845",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:52-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:49-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9a47c640-8d22-4951-b546-3b4b44024dbc",
+   "name": "emulator-reimei-E-0038-reimei-E-x300-p4-c2496-064852",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:48:59-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:51-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "74346805-9e8f-4ab3-afc6-e2707b749b3d",
+   "name": "emulator-reimei-E-0039-reimei-E-x300-p4-c2496-064859",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:49:06-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:52-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "c03dd8c9-8359-4639-bdcb-b6339695b51e",
+   "name": "emulator-reimei-E-0040-reimei-E-x300-p4-c2496-064906",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T06:49:07-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:11:52-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "95fbb29d-48f9-4fdb-8b53-1063d765707e",
+   "name": "emulator-reimei-E-0041-reimei-E-x1-p4-c2496-071152",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:00-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:30:51-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "b543a95c-8999-43b8-9768-60ec5d975811",
+   "name": "emulator-reimei-E-0042-reimei-E-x1-p4-c2496-071200",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:08-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:31:14-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "d2e183e5-253d-4b77-9697-990e9ba5f2ab",
+   "name": "emulator-reimei-E-0043-reimei-E-x1-p4-c2496-071208",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:15-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:39-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3f0e526c-6e1d-413f-889c-7a382540a495",
+   "name": "emulator-reimei-E-0044-reimei-E-x1-p4-c2496-071215",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:16-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:39-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "b278b9bc-382d-4b0e-a0a9-667e5b3c514c",
+   "name": "emulator-reimei-E-0045-reimei-E-x300-p4-c2496-071216",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:23-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:41-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3a81c8d2-3d20-4928-b616-7d2d38f3728d",
+   "name": "emulator-reimei-E-0046-reimei-E-x300-p4-c2496-071223",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:30-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:43-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "45dd0caf-75fb-4c79-b701-4f7613e2c83d",
+   "name": "emulator-reimei-E-0047-reimei-E-x300-p4-c2496-071230",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:38-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:44-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "318204ee-e80e-40a5-aac6-09138b7d653f",
+   "name": "emulator-reimei-E-0048-reimei-E-x300-p4-c2496-071238",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:12:38-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:35:44-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "6a967247-f4b7-4408-b193-e3aa32873101",
+   "name": "emulator-reimei-E-0049-reimei-E-x1-p4-c2496-073544",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:35:52-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:54:41-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3d0bc45e-ac94-411c-aeb1-9eeb3bfac07a",
+   "name": "emulator-reimei-E-0050-reimei-E-x1-p4-c2496-073552",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:35:59-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:06-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "6c0662c6-41dc-4eb2-8734-26f88bbbb525",
+   "name": "emulator-reimei-E-0051-reimei-E-x1-p4-c2496-073559",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:06-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:08-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "a0c6e43b-91d8-4727-b97f-fb28e94c6566",
+   "name": "emulator-reimei-E-0052-reimei-E-x1-p4-c2496-073606",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:07-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:09-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "5ec7b2fe-8a2f-43ec-8848-827275e1ae3c",
+   "name": "emulator-reimei-E-0053-reimei-E-x300-p4-c2496-073607",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:13-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:10-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "e5238ede-910e-4aef-bf88-c282320c1472",
+   "name": "emulator-reimei-E-0054-reimei-E-x300-p4-c2496-073613",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:20-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:11-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3dda8f8f-de48-4815-9efe-7a76bdcbb7f3",
+   "name": "emulator-reimei-E-0055-reimei-E-x300-p4-c2496-073620",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:27-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:13-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9507df1e-dddb-4f55-835d-1a792388557a",
+   "name": "emulator-reimei-E-0056-reimei-E-x300-p4-c2496-073627",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:36:28-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T07:59:13-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "44fb9817-0865-47e6-8ea2-be739a79f722",
+   "name": "emulator-reimei-E-0057-reimei-E-x1-p4-c2496-075913",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:20-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:18:12-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "4b8412d4-5f50-4343-837c-8a1d3a12ac2b",
+   "name": "emulator-reimei-E-0058-reimei-E-x1-p4-c2496-075920",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:28-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:18-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "b311aa0e-aeef-4f30-8690-fcb5c009f9f0",
+   "name": "emulator-reimei-E-0059-reimei-E-x1-p4-c2496-075928",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:35-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:20-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "509b874c-1e71-4853-9da7-0fce2d3c1dde",
+   "name": "emulator-reimei-E-0060-reimei-E-x1-p4-c2496-075935",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:36-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:20-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "ea0b392e-b80e-45a9-af17-56a1ea56f448",
+   "name": "emulator-reimei-E-0061-reimei-E-x300-p4-c2496-075936",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:44-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:21-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "26bfff29-fd51-4813-819f-97336fcf91a2",
+   "name": "emulator-reimei-E-0062-reimei-E-x300-p4-c2496-075944",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:50-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:23-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "fcfae75c-3899-43bd-a26f-07d38c7e68ce",
+   "name": "emulator-reimei-E-0063-reimei-E-x300-p4-c2496-075950",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:57-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:24-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "10ed50be-ca7c-475d-9061-df31c0e05682",
+   "name": "emulator-reimei-E-0064-reimei-E-x300-p4-c2496-075957",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T07:59:58-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:23:24-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "dca2be2a-8265-4f7c-9c39-d7b7ab5f50f0",
+   "name": "emulator-reimei-E-0065-reimei-E-x1-p4-c2496-082324",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:23:31-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:42:44-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "457de546-b307-4958-a501-b6dc8bd16fa3",
+   "name": "emulator-reimei-E-0066-reimei-E-x1-p4-c2496-082331",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:23:39-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:09-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "087baedb-5c01-4e17-9b1e-daded4e7eca2",
+   "name": "emulator-reimei-E-0067-reimei-E-x1-p4-c2496-082339",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:23:47-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:11-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "18bf12fb-5b53-42ee-8744-40995e442f48",
+   "name": "emulator-reimei-E-0068-reimei-E-x1-p4-c2496-082347",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:23:47-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:11-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "7d226810-7260-45c1-a6f9-48d368342caf",
+   "name": "emulator-reimei-E-0069-reimei-E-x300-p4-c2496-082347",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:23:54-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:12-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "2dec03ea-5efa-43d5-8e5c-f9a42f7a1878",
+   "name": "emulator-reimei-E-0070-reimei-E-x300-p4-c2496-082354",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:24:01-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:14-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "fb026d3e-2e2b-4fbb-9127-77df232972a6",
+   "name": "emulator-reimei-E-0071-reimei-E-x300-p4-c2496-082401",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:24:09-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:15-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9c5860fd-b848-440d-a6b8-f551504658d1",
+   "name": "emulator-reimei-E-0072-reimei-E-x300-p4-c2496-082409",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:24:10-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T08:47:15-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "82bf7cd2-50dc-45bf-9986-295e408e3183",
+   "name": "emulator-reimei-E-0073-reimei-E-x1-p4-c2496-084715",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:23-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:10:58-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "74091190-b363-4654-b3bc-855d83e458fa",
+   "name": "emulator-reimei-E-0074-reimei-E-x1-p4-c2496-084723",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:30-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:01-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "ab772805-573a-4cc3-92fa-11690e2af6be",
+   "name": "emulator-reimei-E-0075-reimei-E-x1-p4-c2496-084730",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:38-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:03-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "6f78c40b-7c66-471a-8bb9-fb65e3ee8e63",
+   "name": "emulator-reimei-E-0076-reimei-E-x1-p4-c2496-084738",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:39-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:03-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "e47dcf0f-0895-4176-b4ac-6ee17b8d7df9",
+   "name": "emulator-reimei-E-0077-reimei-E-x300-p4-c2496-084739",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:46-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:04-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0e48c431-d5ee-4922-a22d-88782c9d84c3",
+   "name": "emulator-reimei-E-0078-reimei-E-x300-p4-c2496-084746",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:47:53-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:06-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9901418d-1fdc-497b-8284-66d49b2da732",
+   "name": "emulator-reimei-E-0079-reimei-E-x300-p4-c2496-084753",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:48:00-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:07-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8c3e0492-32e3-4985-91f7-969daf02423a",
+   "name": "emulator-reimei-E-0080-reimei-E-x300-p4-c2496-084800",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T08:48:00-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:11:07-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "e436e933-e10f-4936-9752-6df2ac28a1b0",
+   "name": "emulator-reimei-E-0081-reimei-E-x1-p4-c2496-091107",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:15-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:30:06-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "58a174c0-81c5-4e11-a4e2-2a9868b04869",
+   "name": "emulator-reimei-E-0082-reimei-E-x1-p4-c2496-091115",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:22-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:51-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "cc57bb0d-681b-49fe-8bec-8d3831eb5658",
+   "name": "emulator-reimei-E-0083-reimei-E-x1-p4-c2496-091122",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    30
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:29-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:53-0800",
+   "cost": 386.888,
+   "source": "submitted"
+  },
+  {
+   "job_id": "e8b0949a-ecfe-4c64-aad0-96159a25d728",
+   "name": "emulator-reimei-E-0084-reimei-E-x1-p4-c2496-091129",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:30-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:53-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "01d59c43-726d-4acb-8e00-033f28a596e3",
+   "name": "emulator-reimei-E-0085-reimei-E-x300-p4-c2496-091130",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:37-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:54-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "02b43660-c250-411f-ba07-a396a1c6c94b",
+   "name": "emulator-reimei-E-0086-reimei-E-x300-p4-c2496-091137",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:44-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:56-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "4ce28699-fc4d-4b20-983a-b5581ad8a429",
+   "name": "emulator-reimei-E-0087-reimei-E-x300-p4-c2496-091144",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:51-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:57-0800",
+   "cost": 17.729599999999998,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3b97b226-d155-4399-9a28-654cece4169a",
+   "name": "emulator-reimei-E-0088-reimei-E-x300-p4-c2496-091151",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:11:52-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:34:57-0800",
+   "cost": 10.568,
+   "source": "submitted"
+  },
+  {
+   "job_id": "4108b483-34c4-426b-b818-64376efed437",
+   "name": "emulator-reimei-E-0089-reimei-E-x1-p14-c10800-093457",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:05-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:52:07-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "544d83b4-be85-4e0d-b348-1aca5e21682e",
+   "name": "emulator-reimei-E-0090-reimei-E-x1-p14-c10800-093505",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:12-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:52:48-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "1c3d7002-065f-4580-b5f9-0ade85df6cff",
+   "name": "emulator-reimei-E-0091-reimei-E-x1-p14-c10800-093512",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:19-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:55:13-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3180451d-9e02-4191-8000-ab04e42db6b1",
+   "name": "emulator-reimei-E-0092-reimei-E-x1-p14-c10800-093519",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:27-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:55:54-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "d71cb1ec-c1af-463c-8598-8f76db41471a",
+   "name": "emulator-reimei-E-0093-reimei-E-x1-p14-c10800-093527",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:34-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T09:58:18-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0579e572-e0be-4cb2-a994-9a287cb39d41",
+   "name": "emulator-reimei-E-0094-reimei-E-x1-p14-c10800-093534",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:41-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:04:24-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "8c9c2809-5ba9-4200-a2ad-c84a825b981b",
+   "name": "emulator-reimei-E-0095-reimei-E-x1-p14-c10800-093541",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:49-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:04:26-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "1ca83be0-fe12-449c-ae41-5093e48cf16b",
+   "name": "emulator-reimei-E-0096-reimei-E-x1-p14-c10800-093549",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:35:56-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:33-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "fd0c26e6-ef2b-4b66-a65b-d27efdff1d43",
+   "name": "emulator-reimei-E-0097-reimei-E-x1-p14-c10800-093556",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:03-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:34-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "f5daff88-1f27-4029-97ba-c073cb6a6f7b",
+   "name": "emulator-reimei-E-0098-reimei-E-x1-p14-c10800-093603",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:11-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:36-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "a793571a-0738-4eb5-96d1-e19eb9b98677",
+   "name": "emulator-reimei-E-0099-reimei-E-x1-p14-c10800-093611",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:18-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:38-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "b7d89177-4e4d-4b28-8afe-48f99a3d3f0f",
+   "name": "emulator-reimei-E-0100-reimei-E-x1-p14-c10800-093618",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:25-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:40-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0959a2ae-9f56-4534-a86c-fbced3b143b1",
+   "name": "emulator-reimei-E-0101-reimei-E-x1-p14-c10800-093625",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:32-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:41-0800",
+   "cost": 259.592,
+   "source": "submitted"
+  },
+  {
+   "job_id": "9b6feba8-df7f-45e3-acab-b9f9b63ec940",
+   "name": "emulator-reimei-E-0102-reimei-E-x1-p14-c10800-093632",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-19T09:36:34-0800",
+   "commit": "0cf4610df14d922c55165f814d708f6c37ac8116",
+   "modified": false,
+   "completed": "2026-11-19T10:10:42-0800",
+   "cost": 64.904,
+   "source": "submitted"
+  }
+ ],
+ "usage": {
+  "n_circuits": 85680,
+  "n_shots": 1361520,
+  "n_programs": 150,
+  "cost_formula_hqc": 23139.408000000003
+ },
+ "outputs": [
+  "results/emulator-reimei-E/emulator_iid-seed0.npz",
+  "results/emulator-reimei-E/emulator_iid-seed1.npz",
+  "results/emulator-reimei-E/emulator_iid-seed2.npz",
+  "results/emulator-reimei-E/emulator_iid-seed3.npz",
+  "results/emulator-reimei-E/emulator_iid-seed4.npz",
+  "results/emulator-reimei-E/emulator_iid-seed5.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed0.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed1.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed2.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed3.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed4.npz",
+  "results/emulator-reimei-E/emulator_dirichlet-seed5.npz",
+  "results/emulator-reimei-E/summary.json",
+  "results/emulator-reimei-E/provenance.json"
+ ],
+ "notes": []
+}

@@ -63,7 +63,14 @@ SCENARIOS["emulator_dirichlet"] = Scenario(name="emulator_dirichlet", alpha=0.5,
 
 EMULATOR_SCENARIOS = ("emulator_iid", "emulator_dirichlet")
 SIMULATION_SCENARIOS = tuple(k for k in SCENARIOS if k not in EMULATOR_SCENARIOS)
-EMULATOR_SEEDS = (0, 1, 2, 3, 4, 5)
+# The emulator experiment was executed in two campaigns with the same protocol: the first six seeds,
+# then the remaining seeds up to the number of seeds of the simulations.  The local model follows the
+# same grouping (the runs of a campaign advance in lockstep).
+EMULATOR_CAMPAIGNS = {"emulator-reimei-E": (0, 1, 2, 3, 4, 5),
+                      "emulator-reimei-E-2": (6, 7, 8, 9, 10, 11, 12, 13, 14, 15)}
+EMULATOR_LOCAL = {"emulator-local": (0, 1, 2, 3, 4, 5),
+                  "emulator-local-2": (6, 7, 8, 9, 10, 11, 12, 13, 14, 15)}
+EMULATOR_SEEDS = (0, 1, 2, 3, 4, 5)        # default seeds of scripts/run_emulator.py (the first campaign)
 EMULATOR_RUN = RunConfig(rounds=15, batch=2, local_steps=1, echo_shots=5, eval_shots=20, eval_every=1)
 EMULATOR_TAIL = 5              # the reported accuracy is the mean over the last rounds
 EMULATOR_SEGMENTS = 528        # circuits packed into one program (a program of 2112 circuits was not accepted in time)

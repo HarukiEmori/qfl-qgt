@@ -15,7 +15,9 @@ Backends
     python scripts/run_emulator.py --backend local --name emulator-local             # prediction of the local model
     python scripts/run_emulator.py --backend nexus --device reimei-SC --rounds 1 --name emulator-syntax-check
     python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E
+    python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E-2 --segments 816 --programs-per-job 1
 
+The seeds of the two campaigns are listed in ``qfedqgt/scenarios.py`` (``EMULATOR_CAMPAIGNS``).
 The run is resumable: finished jobs are read from the cache and unfinished jobs are re-attached, so
 the same command continues an interrupted campaign.  Output in ``results/<name>/``: one ``.npz`` per
 run, ``summary.json``, the job log and the shot tables (``cache/``), and the run record
@@ -47,7 +49,8 @@ METHODS = ("QFedAvg", "QFedFisher", "QFedQGT")
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scenarios", nargs="+", default=list(S.EMULATOR_SCENARIOS), choices=sorted(S.SCENARIOS))
-    ap.add_argument("--seeds", nargs="+", type=int, default=list(S.EMULATOR_SEEDS))
+    ap.add_argument("--seeds", nargs="+", type=int, default=None,
+                    help="seeds of the runs (default: the seeds stored with the campaign, else those of the first campaign)")
     ap.add_argument("--methods", nargs="+", default=list(METHODS))
     ap.add_argument("--backend", default="local", choices=["local", "aer", "nexus"])
     ap.add_argument("--device", default="reimei-E", help="Nexus device name")
@@ -71,18 +74,21 @@ def main(argv=None) -> None:
     name = a.name or ("emulator-" + (a.device if a.backend == "nexus" else a.backend))
     out_dir = os.path.join(ROOT, "results", name)
     os.makedirs(out_dir, exist_ok=True)
-    runs = [(sc, seed) for sc in a.scenarios for seed in a.seeds]
-
-    # the packing of a campaign is stored with its results, so that the same command without the packing
-    # options reproduces the campaign from the cache
+    # the settings of a campaign (seeds and packing) are stored with its results, so that the same command
+    # with only the name of the campaign reproduces it from the cache
     packing_file = os.path.join(out_dir, "packing.json")
-    if os.path.exists(packing_file) and not a.segments_schedule and a.segments == S.EMULATOR_SEGMENTS:
+    stored = {}
+    if os.path.exists(packing_file):
         with open(packing_file) as f:
             stored = json.load(f)
+    if a.seeds is None:
+        a.seeds = list(stored.get("seeds", S.EMULATOR_CAMPAIGNS.get(name, S.EMULATOR_LOCAL.get(name, S.EMULATOR_SEEDS))))
+    if stored and not a.segments_schedule and a.segments == S.EMULATOR_SEGMENTS:
         a.segments, a.segments_schedule = stored["segments"], stored["segments_schedule"]
-    elif a.backend == "nexus":
+    elif a.backend == "nexus" and not a.cached_only:
         with open(packing_file, "w") as f:
-            json.dump(dict(segments=a.segments, segments_schedule=list(a.segments_schedule)), f, indent=1)
+            json.dump(dict(seeds=list(a.seeds), segments=a.segments, segments_schedule=list(a.segments_schedule)), f, indent=1)
+    runs = [(sc, seed) for sc in a.scenarios for seed in a.seeds]
     schedule = tuple((int(x.split(":")[0]), int(x.split(":")[1])) for x in a.segments_schedule)
     device_factory, executor = None, LocalExecutor()
     if a.backend in ("aer", "nexus"):
