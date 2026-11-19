@@ -67,6 +67,10 @@ class LocalExecutor:
         self.n_circuits = 0
         self.n_shots = 0
 
+    def describe(self) -> dict:
+        return dict(kind="local simulation (exact outcome distributions of the gate-level noise model, "
+                         "multinomial sampling of the shots)")
+
     def run(self, requests: list) -> None:
         for req in requests:
             req.counts = req.device.counts(req.template, req.A, req.shots, req.split)

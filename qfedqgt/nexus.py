@@ -26,7 +26,7 @@ from dataclasses import dataclass, asdict
 
 import numpy as np
 
-from . import sim
+from . import provenance, sim
 
 __all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor"]
 
@@ -174,6 +174,9 @@ class AerExecutor(_ProgramExecutor):
         self.backend = AerBackend()
         self.seed = seed
 
+    def describe(self) -> dict:
+        return dict(kind="local noiseless simulation of the packed programs (Aer)")
+
     def _submit(self, device, template, chunks, shots, label):
         tables = []
         for j, ch in enumerate(chunks):
@@ -195,20 +198,24 @@ class NexusExecutor(_ProgramExecutor):
     Every group of programs is one execute job.  The shot tables of finished jobs are
     cached in ``cache_dir`` under a key derived from the device profile, the shot count
     and the circuit angles, so that an interrupted campaign can be resumed without
-    resubmitting completed work.  A log of the jobs (identifier, programs, shots, cost)
-    is appended to ``cache_dir/jobs.jsonl``.  A job that was submitted but not collected
-    before an interruption is found again through this log and is re-attached by its
-    identifier instead of being submitted a second time.
+    resubmitting completed work.  A log of the jobs (identifier, programs, shots, cost,
+    and the commit of the program that submitted them) is appended to ``cache_dir/jobs.jsonl``.
+    A job that was submitted but not collected before an interruption is found again
+    through this log and is re-attached by its identifier instead of being submitted a
+    second time.
+
+    The connection to Nexus is opened only when something has to be submitted, so that a
+    run whose results are all in the cache needs neither a login nor a network connection.
+    ``job_records`` lists the jobs behind the results of this session, including the jobs
+    whose results were read from the cache (see :mod:`qfedqgt.provenance`).
     """
 
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0):
         super().__init__(segments)
-        import qnexus as qnx
-
-        self.qnx = qnx
-        self.project = qnx.projects.get_or_create(name=project)
-        qnx.context.set_active_project(self.project)
+        self.project_name = project
+        self.qnx = None
+        self.project = None
         self.cache_dir = cache_dir
         os.makedirs(cache_dir, exist_ok=True)
         self.run_name = run_name
@@ -216,7 +223,24 @@ class NexusExecutor(_ProgramExecutor):
         self.timeout = timeout
         self.cost_margin = cost_margin
         self.cost_charged = 0.0
+        self.job_records = []
         self._counter = 0
+        self._program = None
+        self._devices = set()
+
+    def _connect(self):
+        """Open the connection to Nexus (requires ``qnx login``) the first time it is needed."""
+        if self.qnx is None:
+            import qnexus as qnx
+
+            self.qnx = qnx
+            self.project = qnx.projects.get_or_create(name=self.project_name)
+            qnx.context.set_active_project(self.project)
+        return self.qnx
+
+    def describe(self) -> dict:
+        return dict(kind="Quantinuum Nexus", project=self.project_name,
+                    device_profiles=sorted(self._devices), cache=provenance._relative(self.cache_dir))
 
     # -- helpers
     def _config(self, device: DeviceProfile):
@@ -228,7 +252,7 @@ class NexusExecutor(_ProgramExecutor):
             from quantinuum_schemas.models.quantinuum_systems_noise import UserErrorParams
 
             kwargs["error_params"] = UserErrorParams(**params)
-        return self.qnx.QuantinuumConfig(**kwargs)
+        return self._connect().QuantinuumConfig(**kwargs)
 
     def _key(self, device, template, chunk, shots) -> str:
         h = hashlib.sha1()
@@ -265,12 +289,54 @@ class NexusExecutor(_ProgramExecutor):
                     out[key] = (job_id, ref_id, rec["name"])
         return out
 
+    def _job_index(self) -> tuple:
+        """({job id: merged log record}, {cache key: job id}) from ``jobs.jsonl``."""
+        path = os.path.join(self.cache_dir, "jobs.jsonl")
+        jobs, by_key = {}, {}
+        if not os.path.exists(path):
+            return jobs, by_key
+        with open(path) as f:
+            for line in f:
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                job_id, event = rec.get("job_id"), rec.get("event")
+                if event == "submitted":
+                    device = rec.get("device", {})
+                    jobs[job_id] = dict(job_id=job_id, name=rec.get("name"), device=device.get("device_name"),
+                                        error_scale=device.get("gate_scale", 1.0), noisy=device.get("noisy", True),
+                                        shots=rec.get("shots"), programs=rec.get("programs"),
+                                        submitted=rec.get("time"), commit=rec.get("commit"),
+                                        modified=rec.get("modified"), completed=None, cost=None)
+                    for key in rec.get("keys", []):
+                        by_key[key] = job_id
+                elif event == "completed" and job_id in jobs:
+                    jobs[job_id].update(completed=rec.get("time"), cost=rec.get("cost"))
+        return jobs, by_key
+
+    def _note_jobs(self, keys, source: str) -> None:
+        """Add the jobs that produced the shot tables ``keys`` to ``job_records`` (once each)."""
+        if not keys:
+            return
+        jobs, by_key = self._job_index()
+        seen = {r["job_id"] for r in self.job_records}
+        for key in keys:
+            job_id = by_key.get(key)
+            if job_id is not None and job_id not in seen:
+                seen.add(job_id)
+                self.job_records.append(dict(jobs[job_id], source=source))
+
     # -- runner interface
     def _submit(self, device, template, chunks, shots, label):
-        qnx = self.qnx
+        self._devices.add(device.tag)
         keys = [self._key(device, template, ch, shots) for ch in chunks]
         todo = [j for j, k in enumerate(keys) if not os.path.exists(os.path.join(self.cache_dir, k + ".npz"))]
+        self._note_jobs([k for j, k in enumerate(keys) if j not in set(todo)], "cache")
         jobs = []
+        qnx = self._connect() if todo else None
+        if todo and self._program is None:
+            self._program = provenance.program_info()
         # re-attach the jobs of an interrupted run before anything is submitted
         pending = self._pending() if todo else {}
         attach = {}
@@ -287,7 +353,7 @@ class NexusExecutor(_ProgramExecutor):
             except Exception as exc:        # the job is gone: submit its programs again
                 self._log(dict(event="reattach-failed", job_id=job_id, error=repr(exc)[:200], time=stamp))
                 continue
-            jobs.append(dict(job=job, **item))
+            jobs.append(dict(job=job, source="reattached", **item))
             self._log(dict(event="reattached", name=item["name"], job_id=job_id, programs=len(item["part"]), time=stamp))
             todo = [j for j in todo if j not in set(item["part"])]
         cfg = self._config(device) if todo else None
@@ -301,9 +367,10 @@ class NexusExecutor(_ProgramExecutor):
             job = qnx.start_execute_job(programs=refs, n_shots=[shots] * len(refs), backend_config=cfg,
                                         name=name, project=self.project, max_cost=cost)
             ref_ids = [str(r.id) for r in refs]
-            jobs.append(dict(job=job, part=part, ref_ids=ref_ids, name=name))
+            jobs.append(dict(job=job, part=part, ref_ids=ref_ids, name=name, source="submitted"))
             self._log(dict(event="submitted", name=name, job_id=str(job.id), device=asdict(device), shots=shots,
                            programs=len(part), keys=[keys[j] for j in part], ref_ids=ref_ids,
+                           commit=self._program.get("commit"), modified=bool(self._program.get("modified")),
                            time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
         return dict(keys=keys, jobs=jobs, template=template, chunks=chunks)
 
@@ -332,4 +399,5 @@ class NexusExecutor(_ProgramExecutor):
             self.cost_charged += 0.0 if np.isnan(cost) else cost
             self._log(dict(event="completed", name=item["name"], job_id=str(item["job"].id), cost=cost,
                            time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
+            self._note_jobs([handle["keys"][j] for j in item["part"]], item.get("source", "submitted"))
         return [np.load(os.path.join(self.cache_dir, k + ".npz"))["shots"].astype(np.int64) for k in handle["keys"]]

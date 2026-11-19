@@ -114,12 +114,20 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     params = fake.configs[0]["error_params"]
     assert params.p1_scale == 40.0 and params.p2_scale == 40.0 and params.memory_scale == 40.0
 
-    # 2. a second run with the same inputs uses the cache and submits nothing
+    # the job is recorded with the commit of the program that submitted it
+    assert len(ex.job_records) == 1 and ex.job_records[0]["source"] == "submitted"
+    assert ex.job_records[0]["device"] == "reimei-E" and ex.job_records[0]["error_scale"] == 40.0
+    assert "commit" in ex.job_records[0] and ex.job_records[0]["completed"]
+
+    # 2. a second run with the same inputs uses the cache, submits nothing, and does not connect to Nexus
     ex2 = NexusExecutor("test", cache, segments=2)
     _, reqs2 = _requests(device)
     ex2.run(reqs2)
-    assert len(fake.started) == 1 and fake.fetched == []
+    assert len(fake.started) == 1 and fake.fetched == [] and ex2.qnx is None
     assert np.array_equal(reqs2[0].counts, reqs[0].counts)
+    # ... and still names the job that produced the cached results
+    assert [r["job_id"] for r in ex2.job_records] == [ex.job_records[0]["job_id"]]
+    assert ex2.job_records[0]["source"] == "cache"
 
     # 3. an interrupted run: the job is submitted but never collected
     device3 = DeviceProfile("reimei-E", 80.0)

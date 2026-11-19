@@ -1,0 +1,168 @@
+{
+ "task": "noise strength from echo circuits",
+ "entry": "scripts/nexus_geometry.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "76c532e0648f9242890fcac8e306c4b0680a6032",
+  "branch": "main",
+  "modified": [
+   "qfedqgt/federated.py",
+   "qfedqgt/metric.py",
+   "qfedqgt/nexus.py",
+   "qfedqgt/provenance.py",
+   "scripts/nexus_geometry.py",
+   "scripts/nexus_metric.py",
+   "scripts/nexus_smoke.py",
+   "tests/test_metric.py",
+   "tests/test_nexus_resume.py",
+   "tests/test_provenance.py"
+  ]
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x150",
+   "reimei-E-x200",
+   "reimei-E-x300",
+   "reimei-E-x50",
+   "reimei-E-x500"
+  ],
+  "cache": "results/nexus-geometry/cache-reimei-E"
+ },
+ "parameters": {
+  "scales": [
+   1.0,
+   50.0,
+   150.0,
+   200.0,
+   300.0,
+   500.0
+  ],
+  "shots": 100,
+  "inputs": 8,
+  "seed": 0
+ },
+ "started": "2026-11-19T01:09:45-0800",
+ "finished": "2026-11-19T01:09:45-0800",
+ "duration_s": 0.0,
+ "jobs": [
+  {
+   "job_id": "9aad491a-ec3b-43bd-a584-3e0b3f68c6c6",
+   "name": "geometry-reimei-E-0001-reimei-E-x1-s100-c8-001624",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:24-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:21:37-0800",
+   "cost": 35.72,
+   "source": "cache"
+  },
+  {
+   "job_id": "12b66ee5-e46b-4ebf-93c7-9368119c3f83",
+   "name": "geometry-reimei-E-0002-reimei-E-x50-s100-c8-001624",
+   "device": "reimei-E",
+   "error_scale": 50.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:25-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:21:40-0800",
+   "cost": 35.72,
+   "source": "cache"
+  },
+  {
+   "job_id": "25e859c3-f711-4f37-a809-8ff7ee1fc708",
+   "name": "geometry-reimei-E-0003-reimei-E-x150-s100-c8-001625",
+   "device": "reimei-E",
+   "error_scale": 150.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:25-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:22:11-0800",
+   "cost": 35.72,
+   "source": "cache"
+  },
+  {
+   "job_id": "d5385bb1-1bc7-466f-9f87-6ea745db7e49",
+   "name": "geometry-reimei-E-0004-reimei-E-x200-s100-c8-001625",
+   "device": "reimei-E",
+   "error_scale": 200.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:26-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:22:11-0800",
+   "cost": 35.72,
+   "source": "cache"
+  },
+  {
+   "job_id": "7af7da8f-c429-4d7d-aced-2c1c8a224db6",
+   "name": "geometry-reimei-E-0005-reimei-E-x300-s100-c8-001626",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:26-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:22:41-0800",
+   "cost": 35.72,
+   "source": "cache"
+  },
+  {
+   "job_id": "30fbedde-27ba-4b99-b561-29e587ed6a6a",
+   "name": "geometry-reimei-E-0006-reimei-E-x500-s100-c8-001626",
+   "device": "reimei-E",
+   "error_scale": 500.0,
+   "noisy": true,
+   "shots": 100,
+   "programs": 1,
+   "submitted": "2026-11-19T00:16:27-0800",
+   "commit": null,
+   "modified": null,
+   "completed": "2026-11-19T00:22:42-0800",
+   "cost": 35.72,
+   "source": "cache"
+  }
+ ],
+ "usage": {
+  "n_circuits": 48,
+  "n_shots": 4800,
+  "n_programs": 6,
+  "cost_formula_hqc": 229.68
+ },
+ "outputs": [
+  "results/nexus-geometry/reimei-E.json",
+  "results/nexus-geometry/reimei-E-provenance.json"
+ ],
+ "notes": [
+  "the working tree differed from the commit; the commit alone does not reproduce this run"
+ ]
+}

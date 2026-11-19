@@ -23,13 +23,13 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from qfedqgt import data, geometry as geo, sim                       # noqa: E402
+from qfedqgt import data, geometry as geo, provenance, sim           # noqa: E402
 from qfedqgt.federated import Request                                 # noqa: E402
 from qfedqgt.nexus import DeviceProfile, NexusExecutor, program_cost   # noqa: E402
 from qfedqgt.scenarios import SCENARIOS                               # noqa: E402
 
 
-def main() -> None:
+def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--device", default="reimei-SC")
     ap.add_argument("--scales", nargs="+", type=float, default=[1.0])
@@ -38,7 +38,7 @@ def main() -> None:
     ap.add_argument("--project", default="QFedQGT")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--timeout", type=float, default=1800.0)
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
 
     sc = SCENARIOS["shots_and_noise"]
     t = sim.layered_ansatz(sc.n_qubits, sc.layers)
@@ -56,7 +56,10 @@ def main() -> None:
         reqs = [Request(device, e, e.angles(X, theta), a.shots, tag="echo"),
                 Request(device, t, t.angles(X, theta), a.shots, tag="forward")]
         t0 = time.time()
-        ex.run(reqs)
+        with provenance.record_run("smallest job on a Quantinuum backend", entry="scripts/nexus_smoke.py", executor=ex,
+                                   parameters=dict(scale=scale, shots=a.shots, inputs=a.inputs, seed=a.seed),
+                                   save_to=os.path.join(out_dir, f"provenance-x{scale:g}.json")):
+            ex.run(reqs)
         dt = time.time() - t0
         survival = float(reqs[0].counts[0, :, 0].sum() / (a.shots * a.inputs))
         # local gate-level model for comparison
