@@ -3,19 +3,18 @@
  "entry": "scripts/nexus_geometry.py",
  "program": {
   "repository": "https://github.com/HarukiEmori/qfl-qgt",
-  "commit": "76c532e0648f9242890fcac8e306c4b0680a6032",
+  "commit": "b0d5defd17b1a34d3b0095e4e8058db5e98643c6",
   "branch": "main",
   "modified": [
+   "qfedqgt/experiment.py",
    "qfedqgt/federated.py",
-   "qfedqgt/metric.py",
    "qfedqgt/nexus.py",
-   "qfedqgt/provenance.py",
+   "qfedqgt/scenarios.py",
    "scripts/nexus_geometry.py",
-   "scripts/nexus_metric.py",
-   "scripts/nexus_smoke.py",
-   "tests/test_metric.py",
-   "tests/test_nexus_resume.py",
-   "tests/test_provenance.py"
+   "scripts/run_campaign.py",
+   "scripts/run_emulator.py",
+   "tests/test_federated.py",
+   "tests/test_nexus_resume.py"
   ]
  },
  "environment": {
@@ -45,6 +44,8 @@
   "cache": "results/nexus-geometry/cache-reimei-E"
  },
  "parameters": {
+  "scenario": "shots_and_noise",
+  "layers": 2,
   "scales": [
    1.0,
    50.0,
@@ -57,8 +58,8 @@
   "inputs": 8,
   "seed": 0
  },
- "started": "2026-11-19T01:09:45-0800",
- "finished": "2026-11-19T01:09:45-0800",
+ "started": "2026-11-19T01:41:44-0800",
+ "finished": "2026-11-19T01:41:44-0800",
  "duration_s": 0.0,
  "jobs": [
   {

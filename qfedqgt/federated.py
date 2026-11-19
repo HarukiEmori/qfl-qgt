@@ -15,7 +15,7 @@ from . import geometry as geo
 from . import sim
 from .model import VQC
 
-__all__ = ["Request", "LocalBackend", "LocalExecutor", "Client", "Method", "RunConfig", "METHODS",
+__all__ = ["Request", "LocalBackend", "LocalExecutor", "SharedExecutor", "Client", "Method", "RunConfig", "METHODS",
            "run_federated", "random_effects_weights", "between_client_variance", "fisher_aggregate",
            "efficiency_ratio"]
 
@@ -76,6 +76,57 @@ class LocalExecutor:
             req.counts = req.device.counts(req.template, req.A, req.shots, req.split)
             self.n_circuits += req.n_circuits
             self.n_shots += req.n_circuits * req.shots
+
+
+class SharedExecutor:
+    """Lets several federated runs advance in lockstep and executes their circuits together.
+
+    Every run works in its own thread and owns a view (``view(i)``) of this object.  When all
+    runs have handed in the requests of their current step, the requests are executed in one
+    call of the underlying executor, in the order of the run indices.  The order is fixed so
+    that a restarted campaign builds the same programs and finds its results in the cache.
+    On an emulator, the circuits of all runs then wait in the queue once per step.
+    """
+
+    def __init__(self, executor, parties: int):
+        import threading
+
+        self.executor = executor
+        self.parties = parties
+        self._pending = [None] * parties
+        self._barrier = threading.Barrier(parties, action=self._flush)
+        self.error = None
+        self.steps = 0
+
+    def _flush(self) -> None:
+        requests = [req for part in self._pending for req in part]
+        self._pending = [None] * self.parties
+        try:
+            self.executor.run(requests)
+        except BaseException as exc:      # the barrier breaks and every run stops
+            self.error = exc
+            raise
+        self.steps += 1
+
+    def view(self, index: int) -> "_SharedView":
+        return _SharedView(self, index)
+
+
+class _SharedView:
+    def __init__(self, shared: SharedExecutor, index: int):
+        self.shared, self.index = shared, index
+
+    def run(self, requests: list) -> None:
+        import threading
+
+        self.shared._pending[self.index] = list(requests)
+        try:
+            self.shared._barrier.wait()
+        except threading.BrokenBarrierError:
+            raise RuntimeError(f"shared execution stopped: {self.shared.error!r}") from self.shared.error
+
+    def __getattr__(self, name):          # usage counters of the underlying executor
+        return getattr(self.shared.executor, name)
 
 
 # --------------------------------------------------------------------------- configuration

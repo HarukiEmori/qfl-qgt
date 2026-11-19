@@ -6,9 +6,12 @@ submitted together and wait in the queue at the same time.  The script compares 
 frequency and the inferred noise strength with the local gate-level noise model.
 
     python scripts/nexus_geometry.py --device reimei-E --scales 1 50 150 200 300 500 --shots 100
+    python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 200 300 400 500
+
+The circuit and the inputs are those of ``--scenario`` (default: the two-layer circuit of the simulations).
 
 Requires ``qnx login`` unless every result is already in the cache.  Output:
-``results/nexus-geometry/<device>.json`` and the run record ``<device>-provenance.json``
+``results/nexus-geometry/<device>[-<scenario>].json`` and the run record ``...-provenance.json``
 (which program, when, on which device; shown when the script ends).
 """
 from __future__ import annotations
@@ -33,6 +36,7 @@ from qfedqgt.scenarios import SCENARIOS                               # noqa: E4
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--device", default="reimei-E")
+    ap.add_argument("--scenario", default="shots_and_noise", choices=sorted(SCENARIOS))
     ap.add_argument("--scales", nargs="+", type=float, default=[1, 50, 150, 200, 300, 500])
     ap.add_argument("--shots", type=int, default=100)
     ap.add_argument("--inputs", type=int, default=8)
@@ -41,7 +45,8 @@ def main(argv=None) -> None:
     ap.add_argument("--timeout", type=float, default=7200.0)
     a = ap.parse_args(argv)
 
-    sc = SCENARIOS["shots_and_noise"]
+    sc = SCENARIOS[a.scenario]
+    stem = a.device if a.scenario == "shots_and_noise" else f"{a.device}-{a.scenario}"
     t = sim.layered_ansatz(sc.n_qubits, sc.layers)
     e = t.echo()
     N = t.dim
@@ -56,8 +61,9 @@ def main(argv=None) -> None:
     reqs = [Request(DeviceProfile(a.device, s), e, A, a.shots, tag=f"echo-x{s:g}") for s in a.scales]
     t0 = time.time()
     with provenance.record_run("noise strength from echo circuits", entry="scripts/nexus_geometry.py", executor=ex,
-                               parameters=dict(scales=a.scales, shots=a.shots, inputs=a.inputs, seed=a.seed),
-                               save_to=os.path.join(out_dir, f"{a.device}-provenance.json")) as rec:
+                               parameters=dict(scenario=a.scenario, layers=sc.layers, scales=a.scales, shots=a.shots,
+                                               inputs=a.inputs, seed=a.seed),
+                               save_to=os.path.join(out_dir, f"{stem}-provenance.json")) as rec:
         ex.run(reqs)
         rows = []
         for s, req in zip(a.scales, reqs):
@@ -74,10 +80,10 @@ def main(argv=None) -> None:
             print(f"x{s:<5g} survival {surv:.3f}+/-{err:.3f} (local model {local:.3f})  p_hat {p_hat:.3f} (local {p_loc:.3f})",
                   flush=True)
         os.makedirs(out_dir, exist_ok=True)
-        path = os.path.join(out_dir, f"{a.device}.json")
+        path = os.path.join(out_dir, f"{stem}.json")
         jobs = ex.job_records
         with open(path, "w") as f:
-            json.dump(dict(device=a.device, shots=a.shots, inputs=a.inputs, seed=a.seed,
+            json.dump(dict(device=a.device, scenario=a.scenario, layers=sc.layers, shots=a.shots, inputs=a.inputs, seed=a.seed,
                            cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
                            cost_formula_hqc=ex.cost_estimate,
                            jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),

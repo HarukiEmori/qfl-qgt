@@ -127,40 +127,55 @@ class _ProgramExecutor:
         self.cost_estimate = 0.0
 
     # -- to be provided by the runner
-    def _submit(self, device, template, chunks, shots, label):
+    def _submit(self, device, specs, label):
+        """Start the programs ``specs = [(template, angle rows, shots), ...]`` on one device."""
         raise NotImplementedError
 
     def _collect(self, handle):
+        """Shot tables of the programs of ``_submit``, in the same order."""
         raise NotImplementedError
 
     def run(self, requests: list) -> None:
-        groups = {}
+        # requests with the same device, shot count and template share programs;
+        # all programs of one device form one submission (one job on an emulator)
+        groups, devices = {}, {}
         for i, req in enumerate(requests):
             if req.shots % req.split:
                 raise ValueError("shots must be divisible by split")
-            groups.setdefault((req.device, req.shots, req.template), []).append(i)
+            key = (req.device, req.shots, req.template)
+            if key not in groups:
+                devices.setdefault(req.device, []).append(key)
+            groups.setdefault(key, []).append(i)
         handles = []
-        for (device, shots, _), members in groups.items():
-            template = requests[members[0]].template
-            rows = np.concatenate([requests[i].A for i in members], axis=0)
-            chunks = [rows[s:s + self.segments] for s in range(0, rows.shape[0], self.segments)]
-            label = f"{getattr(device, 'tag', 'local')}-s{shots}-c{rows.shape[0]}"
-            handles.append((members, template, chunks, shots, self._submit(device, template, chunks, shots, label)))
-            self.n_programs += len(chunks)
-            self.cost_estimate += sum(program_cost(template, len(ch), shots) for ch in chunks)
-        for members, template, chunks, shots, handle in handles:
+        for device, keys in devices.items():
+            specs, layout = [], []
+            for key in keys:
+                _, shots, template = key
+                members = groups[key]
+                rows = np.concatenate([requests[i].A for i in members], axis=0)
+                chunks = [rows[s:s + self.segments] for s in range(0, rows.shape[0], self.segments)]
+                layout.append((members, template, shots, len(specs), len(chunks)))
+                specs += [(template, ch, shots) for ch in chunks]
+            circuits = sum(len(ch) for _, ch, _ in specs)
+            label = f"{getattr(device, 'tag', 'local')}-p{len(specs)}-c{circuits}"
+            handles.append((layout, specs, self._submit(device, specs, label)))
+            self.n_programs += len(specs)
+            self.cost_estimate += sum(program_cost(t, len(ch), m) for t, ch, m in specs)
+        for layout, specs, handle in handles:
             tables = self._collect(handle)                       # one (shots, n * S) bit table per program
-            split = max(requests[i].split for i in members)
-            parts = [_shots_to_counts(tb, template.n, len(ch), split) for tb, ch in zip(tables, chunks)]
-            counts = np.concatenate(parts, axis=1)               # (split, total circuits, D)
-            pos = 0
-            for i in members:
-                req = requests[i]
-                c = counts[:, pos:pos + req.n_circuits]
-                req.counts = c if req.split == split else c.sum(axis=0, keepdims=True)
-                pos += req.n_circuits
-                self.n_circuits += req.n_circuits
-                self.n_shots += req.n_circuits * req.shots
+            for members, template, shots, first, count in layout:
+                split = max(requests[i].split for i in members)
+                parts = [_shots_to_counts(tables[j], template.n, len(specs[j][1]), split)
+                         for j in range(first, first + count)]
+                counts = np.concatenate(parts, axis=1)           # (split, total circuits, D)
+                pos = 0
+                for i in members:
+                    req = requests[i]
+                    c = counts[:, pos:pos + req.n_circuits]
+                    req.counts = c if req.split == split else c.sum(axis=0, keepdims=True)
+                    pos += req.n_circuits
+                    self.n_circuits += req.n_circuits
+                    self.n_shots += req.n_circuits * req.shots
 
 
 # --------------------------------------------------------------------------- local runner
@@ -177,9 +192,9 @@ class AerExecutor(_ProgramExecutor):
     def describe(self) -> dict:
         return dict(kind="local noiseless simulation of the packed programs (Aer)")
 
-    def _submit(self, device, template, chunks, shots, label):
+    def _submit(self, device, specs, label):
         tables = []
-        for j, ch in enumerate(chunks):
+        for j, (template, ch, shots) in enumerate(specs):
             circ = self.backend.get_compiled_circuit(build_program(template, ch, f"{label}-{j}"), optimisation_level=0)
             self.seed += 1
             res = self.backend.run_circuit(circ, n_shots=shots, seed=self.seed)
@@ -211,8 +226,10 @@ class NexusExecutor(_ProgramExecutor):
     """
 
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
-                 max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0):
+                 max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
+                 io_threads: int = 4):
         super().__init__(segments)
+        self.io_threads = io_threads
         self.project_name = project
         self.qnx = None
         self.project = None
@@ -237,6 +254,16 @@ class NexusExecutor(_ProgramExecutor):
             self.project = qnx.projects.get_or_create(name=self.project_name)
             qnx.context.set_active_project(self.project)
         return self.qnx
+
+    def _map(self, fn, items) -> list:
+        """Apply ``fn`` to the items with a few threads (uploads and downloads wait on the network); order is kept."""
+        items = list(items)
+        if self.io_threads <= 1 or len(items) <= 1:
+            return [fn(x) for x in items]
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=self.io_threads) as pool:
+            return list(pool.map(fn, items))
 
     def describe(self) -> dict:
         return dict(kind="Quantinuum Nexus", project=self.project_name,
@@ -328,9 +355,9 @@ class NexusExecutor(_ProgramExecutor):
                 self.job_records.append(dict(jobs[job_id], source=source))
 
     # -- runner interface
-    def _submit(self, device, template, chunks, shots, label):
+    def _submit(self, device, specs, label):
         self._devices.add(device.tag)
-        keys = [self._key(device, template, ch, shots) for ch in chunks]
+        keys = [self._key(device, template, ch, shots) for template, ch, shots in specs]
         todo = [j for j, k in enumerate(keys) if not os.path.exists(os.path.join(self.cache_dir, k + ".npz"))]
         self._note_jobs([k for j, k in enumerate(keys) if j not in set(todo)], "cache")
         jobs = []
@@ -361,22 +388,24 @@ class NexusExecutor(_ProgramExecutor):
             part = todo[start:start + self.max_programs_per_job]
             self._counter += 1
             name = f"{self.run_name}-{self._counter:04d}-{label}-{time.strftime('%H%M%S')}"
-            refs = [qnx.circuits.upload(circuit=build_program(template, chunks[j], f"{name}-p{j}"),
-                                        name=f"{name}-p{j}", project=self.project) for j in part]
-            cost = [float(np.ceil(self.cost_margin * program_cost(template, len(chunks[j]), shots))) for j in part]
-            job = qnx.start_execute_job(programs=refs, n_shots=[shots] * len(refs), backend_config=cfg,
+            refs = self._map(lambda j: qnx.circuits.upload(circuit=build_program(specs[j][0], specs[j][1], f"{name}-p{j}"),
+                                                           name=f"{name}-p{j}", project=self.project), part)
+            shots = [int(specs[j][2]) for j in part]
+            cost = [float(np.ceil(self.cost_margin * program_cost(specs[j][0], len(specs[j][1]), specs[j][2]))) for j in part]
+            job = qnx.start_execute_job(programs=refs, n_shots=shots, backend_config=cfg,
                                         name=name, project=self.project, max_cost=cost)
             ref_ids = [str(r.id) for r in refs]
             jobs.append(dict(job=job, part=part, ref_ids=ref_ids, name=name, source="submitted"))
-            self._log(dict(event="submitted", name=name, job_id=str(job.id), device=asdict(device), shots=shots,
+            self._log(dict(event="submitted", name=name, job_id=str(job.id), device=asdict(device),
+                           shots=sorted(set(shots)), circuit_shots=int(sum(len(specs[j][1]) * specs[j][2] for j in part)),
                            programs=len(part), keys=[keys[j] for j in part], ref_ids=ref_ids,
                            commit=self._program.get("commit"), modified=bool(self._program.get("modified")),
                            time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
-        return dict(keys=keys, jobs=jobs, template=template, chunks=chunks)
+        return dict(keys=keys, jobs=jobs, specs=specs)
 
     def _collect(self, handle):
         qnx = self.qnx
-        n = handle["template"].n
+        specs = handle["specs"]
         for item in handle["jobs"]:
             try:
                 qnx.jobs.wait_for(item["job"], timeout=self.timeout)
@@ -387,11 +416,14 @@ class NexusExecutor(_ProgramExecutor):
                                error=repr(exc)[:300], time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
                 raise
             by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
-            for j, ref_id in zip(item["part"], item["ref_ids"]):
+            def fetch(pair):
+                j, ref_id = pair
                 res = by_input[ref_id].download_result()
-                bits = program_bits(n, len(handle["chunks"][j]))
+                bits = program_bits(specs[j][0].n, len(specs[j][1]))
                 table = np.asarray(res.get_shots(cbits=bits), dtype=np.uint8)
                 np.savez_compressed(os.path.join(self.cache_dir, handle["keys"][j] + ".npz"), shots=table)
+
+            self._map(fetch, zip(item["part"], item["ref_ids"]))
             try:
                 cost = float(qnx.jobs.cost(item["job"]))
             except Exception:           # the cost is informative only

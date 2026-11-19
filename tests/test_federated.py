@@ -95,3 +95,47 @@ def test_noisy_clients_are_downweighted():
     assert w[:2].sum() > 0.85 and w[2:].max() < 0.1
     p_hat = np.asarray(h["p_hat"][-1], float)
     assert p_hat[:2].max() < 0.1 and p_hat[2:].min() > 0.2
+
+
+def test_shared_executor_runs_in_lockstep_and_matches_separate_runs():
+    """Runs that share one executor give the same histories as separate runs, with one execution per step."""
+    import threading
+
+    from qfedqgt.experiment import Scenario, build, make_methods
+    from qfedqgt.federated import LocalExecutor, RunConfig, SharedExecutor, run_federated
+
+    sc = Scenario(name="t", n_qubits=2, layers=1, n_per_client=8, n_train_per_class=40, n_test_per_class=10,
+                  gate_scales=(1.0, 50.0, 50.0), shots=(4, 2, 2))
+    cfg = RunConfig(rounds=3, batch=2, echo_shots=4, eval_shots=10)
+    lrs = {"QFedAvg": 0.3, "QFedQGT": 0.1}
+
+    def one(seed, executor):
+        model, clients, theta0, ds, _ = build(sc, seed)
+        from dataclasses import replace
+        return run_federated(model, clients, make_methods(lrs), replace(cfg, seed=seed), theta0,
+                             ds.X_test, ds.y_test, executor, None)
+
+    separate = [one(seed, LocalExecutor()) for seed in (0, 1)]
+
+    class Counting(LocalExecutor):
+        calls = 0
+
+        def run(self, requests):
+            Counting.calls += 1
+            super().run(requests)
+
+    shared = SharedExecutor(Counting(), parties=2)
+    out = [None, None]
+
+    def work(i, seed):
+        out[i] = one(seed, shared.view(i))
+
+    threads = [threading.Thread(target=work, args=(i, seed)) for i, seed in enumerate((0, 1))]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+    assert Counting.calls == cfg.rounds and shared.steps == cfg.rounds
+    for a, b in zip(separate, out):
+        for m in lrs:
+            assert np.allclose(a[m]["theta"], b[m]["theta"])

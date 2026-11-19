@@ -1,5 +1,7 @@
 {
  "device": "reimei-E",
+ "scenario": "shots_and_noise",
+ "layers": 2,
  "shots": 100,
  "inputs": 8,
  "seed": 0,

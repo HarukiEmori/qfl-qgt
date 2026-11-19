@@ -1,0 +1,99 @@
+{
+ "task": "two-copy measurement of the Bures metric",
+ "entry": "scripts/nexus_metric.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "b0d5defd17b1a34d3b0095e4e8058db5e98643c6",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x50"
+  ],
+  "cache": "results/metric/cache-reimei-E"
+ },
+ "parameters": {
+  "scales": [
+   1.0,
+   50.0
+  ],
+  "shots": 200,
+  "parameters_measured": [
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "circuits_per_scale": 137,
+  "qubits": 8,
+  "seed": 0,
+  "local_scale_factor": 1.0
+ },
+ "started": "2026-11-19T01:10:42-0800",
+ "finished": "2026-11-19T01:38:31-0800",
+ "duration_s": 1669.4,
+ "jobs": [
+  {
+   "job_id": "a91b9015-6180-4c80-b42e-ce1f33502fd7",
+   "name": "metric-reimei-E-0001-reimei-E-x1-s200-c137-011045",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": 200,
+   "programs": 18,
+   "submitted": "2026-11-19T01:10:49-0800",
+   "commit": "b0d5defd17b1a34d3b0095e4e8058db5e98643c6",
+   "modified": false,
+   "completed": "2026-11-19T01:37:27-0800",
+   "cost": 1646.3200000000006,
+   "source": "submitted"
+  },
+  {
+   "job_id": "0df41450-7fd6-4e71-b095-fe2d9b8154cb",
+   "name": "metric-reimei-E-0002-reimei-E-x50-s200-c137-011049",
+   "device": "reimei-E",
+   "error_scale": 50.0,
+   "noisy": true,
+   "shots": 200,
+   "programs": 18,
+   "submitted": "2026-11-19T01:10:54-0800",
+   "commit": "b0d5defd17b1a34d3b0095e4e8058db5e98643c6",
+   "modified": false,
+   "completed": "2026-11-19T01:37:31-0800",
+   "cost": 1646.3200000000006,
+   "source": "submitted"
+  }
+ ],
+ "usage": {
+  "n_circuits": 274,
+  "n_shots": 54800,
+  "n_programs": 36,
+  "cost_formula_hqc": 3687.2000000000003
+ },
+ "outputs": [
+  "results/metric/reimei-E.json",
+  "results/metric/reimei-E-provenance.json"
+ ],
+ "notes": []
+}

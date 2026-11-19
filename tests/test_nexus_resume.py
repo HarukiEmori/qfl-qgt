@@ -135,7 +135,7 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     t3, reqs3 = _requests(device3)
     rows = np.concatenate([r.A for r in reqs3], axis=0)
     chunks = [rows[s:s + 2] for s in range(0, rows.shape[0], 2)]
-    ex3._submit(device3, t3, chunks, reqs3[0].shots, "interrupted")
+    ex3._submit(device3, [(t3, ch, reqs3[0].shots) for ch in chunks], "interrupted")
     assert len(fake.started) == 2
 
     # 4. the restarted run finds the job in jobs.jsonl and re-attaches it instead of submitting again
@@ -149,7 +149,7 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     device5 = DeviceProfile("reimei-E", 120.0)
     ex5 = NexusExecutor("test", cache, segments=2)
     t5, reqs5 = _requests(device5)
-    ex5._submit(device5, t5, chunks, reqs5[0].shots, "lost")
+    ex5._submit(device5, [(t5, ch, reqs5[0].shots) for ch in chunks], "lost")
     assert len(fake.started) == 3
     fake.store.clear()                                              # the service no longer knows the job
     ex6 = NexusExecutor("test", cache, segments=2)
@@ -162,7 +162,7 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     device7 = DeviceProfile("reimei-E", 160.0)
     ex7 = NexusExecutor("test", cache, segments=2)
     t7, reqs7 = _requests(device7)
-    handle = ex7._submit(device7, t7, chunks, reqs7[0].shots, "broken")
+    handle = ex7._submit(device7, [(t7, ch, reqs7[0].shots) for ch in chunks], "broken")
     fake.broken.add(str(handle["jobs"][0]["job"].id))
     with pytest.raises(RuntimeError):
         ex7._collect(handle)
@@ -171,3 +171,25 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     _, reqs8 = _requests(device7)
     ex8.run(reqs8)
     assert len(fake.started) == n_started + 1 and len(fake.fetched) == n_fetched
+
+
+def test_requests_of_one_device_form_one_job_with_their_own_shots(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor
+
+    t = sim.layered_ansatz(2, 1)
+    e = t.echo()
+    rng = np.random.default_rng(0)
+    A = t.angles(rng.uniform(-1, 1, size=(5, t.n_data)), rng.uniform(-1, 1, size=t.n_params))
+    E = e.angles(rng.uniform(-1, 1, size=(3, t.n_data)), rng.uniform(-1, 1, size=t.n_params))
+    clean, noisy = DeviceProfile("reimei-E", 1.0), DeviceProfile("reimei-E", 300.0)
+    reqs = [Request(clean, t, A[:3], 10, tag="grad"), Request(noisy, t, A[3:], 1, tag="grad"),
+            Request(clean, e, E[:1], 5, tag="echo"), Request(noisy, e, E[1:], 5, tag="echo")]
+    ex = NexusExecutor("test", str(tmp_path / "cache"), segments=2)
+    ex.run(reqs)
+    assert len(fake.started) == 2                                  # one job per device profile
+    shots = sorted(sorted(job.n_shots) for job in fake.store.values())
+    assert shots == [[1, 5], [5, 10, 10]]                           # every program keeps its own shot count
+    assert [r.counts.shape for r in reqs] == [(1, 3, t.dim), (1, 2, t.dim), (1, 1, t.dim), (1, 2, t.dim)]
+    assert reqs[0].counts[0, :, 0].tolist() == [10, 10, 10] and reqs[3].counts[0, :, 0].tolist() == [5, 5]

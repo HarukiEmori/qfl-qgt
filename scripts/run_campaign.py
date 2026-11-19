@@ -15,6 +15,11 @@ sens    every step size of the grid on the reported seeds       -> results/sens-
 
 Every (scenario, seed, method) is one task and one file, and finished tasks are skipped.
 The tuning seeds and the reported seeds are disjoint (qfedqgt/scenarios.py).
+
+The scenarios of the emulator experiment (``emulator_iid``, ``emulator_dirichlet``) are not part
+of the default list.  Naming them with ``--scenarios`` runs the same stages with the local
+gate-level model at the multipliers matched to the emulator: ``tune`` and ``select`` give the step
+sizes used on the emulator, and ``main`` and ``sens`` give the prediction of the local model.
 """
 from __future__ import annotations
 
@@ -41,7 +46,6 @@ from qfedqgt import scenarios as S                                # noqa: E402
 MAIN_METHODS = ("QFedAvg", "QFedFisher", "QFedQGT")
 ABLATIONS = ("QFedAvg-shots", "QNG+data", "Bures+data", "Euclid+re", "QFedQGT-invvar")
 WITH_ABLATIONS = ("shots_and_noise", "noise_only_x500")
-TAIL = 10
 
 
 def methods_of(scenario: str) -> tuple:
@@ -50,10 +54,10 @@ def methods_of(scenario: str) -> tuple:
 
 def _run(scenario: str, seed: int, label: str, lr: float, path: str) -> tuple:
     t0 = time.time()
-    out = simulate(S.SCENARIOS[scenario], {label: lr}, S.RUN, seed)
+    out = simulate(S.SCENARIOS[scenario], {label: lr}, S.run_config(scenario), seed)
     h = out[label]
     np.savez_compressed(path, **{f"{label}/{k}": v for k, v in h.items() if isinstance(v, np.ndarray)})
-    return scenario, seed, label, float(np.mean(h["acc_exact"][-TAIL:])), time.time() - t0
+    return scenario, seed, label, float(np.mean(h["acc_exact"][-S.tail(scenario):])), time.time() - t0
 
 
 def _tasks(stage: str, scenarios) -> list:
@@ -122,8 +126,8 @@ def select(scenarios) -> None:
                 files = sorted(glob.glob(os.path.join(d, f"seed*__{m}@{lr:g}.npz")))
                 if len(files) != len(S.TUNING_SEEDS):
                     raise SystemExit(f"tuning runs missing for {sc} {m}@{lr:g}: {len(files)} files")
-                loss = [float(np.load(f)[f"{m}@{lr:g}/loss_exact"][-TAIL:].mean()) for f in files]
-                acc = [float(np.load(f)[f"{m}@{lr:g}/acc_shots"][-TAIL:].mean()) for f in files]
+                loss = [float(np.load(f)[f"{m}@{lr:g}/loss_exact"][-S.tail(sc):].mean()) for f in files]
+                acc = [float(np.load(f)[f"{m}@{lr:g}/acc_shots"][-S.tail(sc):].mean()) for f in files]
                 rows.append((lr, float(np.mean(loss)), float(np.mean(acc))))
             best = max(rows, key=lambda r: (r[2], -r[1]))
             by_loss = min(rows, key=lambda r: r[1])
@@ -142,7 +146,7 @@ def select(scenarios) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=["tune", "select", "main", "sens"])
-    ap.add_argument("--scenarios", nargs="+", default=sorted(S.SCENARIOS), choices=sorted(S.SCENARIOS))
+    ap.add_argument("--scenarios", nargs="+", default=sorted(S.SIMULATION_SCENARIOS), choices=sorted(S.SCENARIOS))
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
     a = ap.parse_args()
     if a.stage == "select":

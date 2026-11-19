@@ -28,6 +28,7 @@ class Scenario:
     gate_scales: tuple = (1.0, 1.0) + (120.0,) * 8      # noise scale of each client's device
     shots: tuple = (50, 50) + (2,) * 8                  # shots per circuit of each client
     eval_scale: float = 1.0               # noise scale of the reference device used for evaluation
+    local_scales: tuple | None = None     # noise scales of the local model, if they differ from gate_scales
     init_width: float = 0.5               # initial parameters are uniform in [-init_width, init_width]
 
     @property
@@ -39,8 +40,10 @@ def build(sc: Scenario, seed: int, base_noise: sim.NoiseModel | None = None, dev
     """Model, clients, initial parameters, data, and the evaluation device.
 
     By default every client owns a :class:`LocalBackend` with the gate-level noise model
-    scaled by its ``gate_scale``.  ``device_factory(gate_scale, role, index)`` can supply
-    other device objects, for example emulator profiles for :class:`qfedqgt.nexus.NexusExecutor`.
+    scaled by its ``gate_scale`` (or by its entry of ``local_scales``, which holds the multipliers
+    of the local model that reproduce the echo survival of the emulator at ``gate_scales``).
+    ``device_factory(gate_scale, role, index)`` can supply other device objects, for example
+    emulator profiles for :class:`qfedqgt.nexus.NexusExecutor`.
     """
     base = base_noise or sim.NoiseModel.reimei()
     t = sim.layered_ansatz(sc.n_qubits, sc.layers)
@@ -49,9 +52,10 @@ def build(sc: Scenario, seed: int, base_noise: sim.NoiseModel | None = None, dev
                          angle_scale=sc.angle_scale, seed=seed)
     parts = data.partition(ds.y_train, sc.n_clients, sc.n_per_client, sc.alpha, seed=seed)
     clients = []
+    local = sc.local_scales or sc.gate_scales
     for k, idx in enumerate(parts):
         if device_factory is None:
-            device = LocalBackend(base.scaled(sc.gate_scales[k]), seed=10_000 * (seed + 1) + k)
+            device = LocalBackend(base.scaled(local[k]), seed=10_000 * (seed + 1) + k)
         else:
             device = device_factory(sc.gate_scales[k], "client", k)
         clients.append(Client(ds.X_train[idx], ds.y_train[idx], device, sc.shots[k], name=f"client{k}"))
