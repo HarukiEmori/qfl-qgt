@@ -247,7 +247,8 @@ def record_run(task: str, entry: str = "", executor=None, backend: dict | None =
     try:
         yield rec
     except BaseException as exc:
-        rec.notes.append(f"the run ended with an error: {type(exc).__name__}: {str(exc)[:200]}")
+        message = str(exc).replace(ROOT + os.sep, "").replace(os.path.expanduser("~"), "~")     # no absolute paths in a record
+        rec.notes.append(f"the run ended with an error: {type(exc).__name__}: {message[:200]}")
         raise
     finally:
         rec.finished = now()

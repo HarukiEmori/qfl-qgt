@@ -426,7 +426,7 @@ class NexusExecutor(_ProgramExecutor):
         jobs = []
         if todo and self.cached_only:
             raise RuntimeError(f"{len(todo)} of {len(keys)} programs for {device.tag} are not in the cache "
-                               f"({self.cache_dir}); nothing was submitted because cached_only is set")
+                               f"({provenance._relative(self.cache_dir)}); nothing was submitted because cached_only is set")
         qnx = self._connect() if todo else None
         if todo and self._program is None:
             self._program = provenance.program_info()

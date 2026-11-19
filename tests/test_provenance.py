@@ -42,3 +42,14 @@ def test_job_summary_reports_devices_times_and_commits():
     text = rec.text()
     assert "reimei-E x1, reimei-E x200" in text and "2026-11-19T09:00:00+0900" in text
     assert "0123456789" in text and "not recorded" in text and "12.5" in text
+
+
+def test_error_notes_do_not_contain_absolute_paths(tmp_path, capsys):
+    import os
+
+    with pytest.raises(RuntimeError):
+        with provenance.record_run("failing run", save_to=str(tmp_path / "out.json")) as rec:
+            raise RuntimeError(f"missing file {os.path.join(provenance.ROOT, 'results', 'x.npz')} in {os.path.expanduser('~')}")
+    capsys.readouterr()
+    assert provenance.ROOT not in rec.notes[0] and os.path.expanduser("~") not in rec.notes[0]
+    assert "results/x.npz" in rec.notes[0]
