@@ -1,11 +1,15 @@
-# Versions installed in /Users/haruki/Develop/venv/pytket-dev as read on 2026-10-21
-# (Python 3.12; the notebook metadata records 3.12.12).
-# Whether these are exactly the versions used when the notebook was last run (2026-03-24) is unverified.
-numpy==2.3.4
-matplotlib==3.10.3
-scikit-learn==1.8.0
-joblib==1.5.3
-qiskit==2.2.2
-qiskit-aer==0.17.2
-jupyterlab==4.4.5
-ipykernel==6.30.0
+# Versions of the environment in which the results of the paper were produced
+# (Python 3.13.16, read on 2026-11-18).
+# Simulations, figures and tests
+numpy==2.5.4
+scipy==1.18.1
+matplotlib==3.11.2
+pytest==9.1.1
+# Emulator and device runs through Quantinuum Nexus (qfedqgt/nexus.py)
+pytket==2.18.5
+qnexus==0.51.1
+quantinuum-schemas==7.8.2
+# Offline check of the native-gate programs (tests/test_programs.py, --backend aer)
+pytket-qiskit==0.79.0
+qiskit==2.6.0
+qiskit-aer==0.18.0

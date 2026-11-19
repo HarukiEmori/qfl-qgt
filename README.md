@@ -1,52 +1,120 @@
 # qfl-qgt
 
-Code accompanying the paper
+Code and data for the paper
 
 > **Quantum Federated Learning Based on Bures--Uhlmann Geometry for Heterogeneous Noisy Clients**
 > Haruki Emori, Masaki Uchihara, Yuuki Tokunaga
-> arXiv / DOI: not yet assigned (to be added after submission)
+> arXiv:2608.28379
 
-## Status of this repository (2026-10-21)
+The repository implements QFedQGT, a quantum federated learning scheme in which every client
+preconditions its gradient with the Bures metric of the mixed states that its own noisy device
+prepares, and the server weights the client updates by their precision.  It contains the simulators,
+the federated protocol, the interface to the Quantinuum emulator `reimei-E`, the numerical checks
+of the statements of the paper, and the scripts that produce its figures and tables.
 
-This repository was created on 2026-10-21 by copying the notebook from the author's local virtual-environment folder
-(`venv/pytket-dev/qfl/`), where it was not under version control.
+## Layout
 
-**Important:** `QFL-QGT.ipynb` is a *prototype* of the method (QFL with the full quantum geometric tensor).
-Its saved outputs correspond to a small statevector study, **not** to the experiment reported in the paper:
-
-| Item | `QFL-QGT.ipynb` (this repo) | Paper (Sec. "Numerical experiments") |
-| :-- | :-- | :-- |
-| Data | scikit-learn `load_digits`, digits 0 vs 1; synthetic "ADNI" (`make_classification`) | MNIST-10 (ten classes, 3000 training images per class) |
-| Model | 4 qubits, 3 layers | 6 qubits, 3 layers, dressed readout head |
-| Clients | 5 (shot budgets inf, 4096, 512, 128, 16) | 9 (Table I conditions (a)-(d)) |
-| Rounds | 20 | 60 (23 evaluated rounds) |
-| Backend | Qiskit Aer statevector | Quantinuum `reimei-E` emulator via Quantinuum Nexus, 4000 shots |
-
-The code that produced the `reimei-E` results, the depth sweep, and the shot-accuracy curve of the paper has not yet been located
-and will be added to this repository when found.
-
-## Contents
-
-| File | Role |
+| Path | Content |
 | :-- | :-- |
-| `QFL-QGT.ipynb` | Prototype implementation: `FastVQC` (statevector VQC with full QGT), clients, server aggregation for `qfl-avg`, `qfl-fisher`, `qfl-qgt`; runs 20 rounds on two datasets and plots accuracy |
-| `qfl-qgt_res_final.pdf` | Figure written by the notebook (`plt.savefig("qfl-qgt_res_final.pdf")`) |
-| `qfl-qgt_res.pdf` | Earlier version of the same figure |
-| `requirements.txt` | Package versions read from the local environment (see the comment in the file) |
+| `qfedqgt/sim.py` | Circuit templates, state-vector and density-matrix simulators, gate-level noise model, parameter-shift circuits |
+| `qfedqgt/geometry.py` | Mixed-state quantum geometric tensor: Bures metric, mean Uhlmann curvature, incompatibility ratio, closed forms for global depolarizing noise |
+| `qfedqgt/model.py` | Variational classifier with Pauli-Z readout and its estimators from measurement counts (gradient, purity) |
+| `qfedqgt/federated.py` | Client update, aggregation rules (QFedAvg, QFedFisher, QFedQGT, ablations), federated loop |
+| `qfedqgt/nexus.py` | Native-gate programs (`PhasedX`, `Rz`, `ZZPhase`), packing of circuits by qubit reuse, execution through Quantinuum Nexus or a local Aer simulator |
+| `qfedqgt/scenarios.py` | Scenarios, run configuration, and learning rates of the paper |
+| `scripts/verify_theory.py` | Numerical verification of the propositions (prints PASS/FAIL) |
+| `scripts/geometry_evaluation.py` | Direct evaluation of the Bures metric and the mean Uhlmann curvature of the client states |
+| `scripts/run_campaign.py` | Simulation campaign: step-size selection on tuning seeds and the reported runs |
+| `scripts/run_federated.py` | One federated run on a chosen backend (`local`, `aer`, `nexus`) |
+| `scripts/download_mnist.py` | Downloads the MNIST archive to `data/` |
+| `scripts/make_figures.py` | Figures and table rows from `results/` |
+| `tests/` | Unit tests (`pytest`) |
+| `results/` | Results of the runs reported in the paper |
+| `legacy/` | Prototype notebook of 2026-03 and its requirements (superseded; kept for the record) |
 
-## Environment
+## Method in brief
 
-- Python 3.12 (notebook metadata: 3.12.12)
-- Package versions: see `requirements.txt` (read from the local `pytket-dev` environment on 2026-10-21; the exact versions at the time of the last run are unverified)
+1. **Device geometry.**  A client runs echo circuits `U†U` and estimates the purity of its states from the
+   frequency of the all-zero outcome.  The purity gives a depolarizing strength `p_k` and the attenuation
+   `kappa(p_k) = (1-p_k)^2 / (1-p_k+2p_k/N)` of its Bures metric.
+2. **Local update.**  The client estimates the gradient with the parameter-shift rule and takes the
+   natural-gradient step `Delta_k = -eta P_k grad`, `P_k = (G_k + eps_k 1)^-1`, with its own Bures metric `G_k`.
+3. **Reported statistics.**  The client reports `Delta_k` and the squared standard error `sigma_k^2` of the
+   step, computed from the spread of the per-sample gradients.
+4. **Aggregation.**  The server uses the weights `w_k ∝ q_k / (zeta^2 + q_k sigma_k^2)`, where `q_k` is the
+   data share and `zeta^2` the between-client variance estimated from the reported updates.  The weights of
+   a round are computed from the statistics of earlier rounds.
+
+## Installation
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/download_mnist.py      # writes data/mnist.npz (11 MB)
+```
+
+The simulations need only `numpy`, `scipy` and `matplotlib`.  The emulator runs need `pytket`, `qnexus`
+and `quantinuum-schemas`; the offline check of the program path needs `pytket-qiskit` and `qiskit-aer`.
 
 ## Reproduction
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-jupyter lab QFL-QGT.ipynb   # run all cells (about 10 minutes on a laptop, according to the saved timings)
+python -m pytest tests -q                    # unit tests
+python scripts/verify_theory.py              # numerical checks of the propositions
+python scripts/geometry_evaluation.py        # Bures metric and mean Uhlmann curvature against noise
+python scripts/run_campaign.py tune          # step-size grid on the tuning seeds
+python scripts/run_campaign.py select        # writes results/tuning/learning_rates.json
+python scripts/run_campaign.py main          # reported runs (16 seeds per scenario and method)
+python scripts/run_campaign.py sens --scenarios shots_and_noise noise_only_x500   # every step size on the reported seeds
+python scripts/make_figures.py all           # figures/geometry.pdf, training.pdf, sweep.pdf
 ```
+
+The scenarios are defined in `qfedqgt/scenarios.py`.
+
+| Name | Clients | Shots per circuit |
+| :-- | :-- | :-- |
+| `shots_and_noise` | 2 reference devices, 12 devices with 200-fold error rates | 50 and 2 |
+| `noise_only_x<s>`, s = 1, 50, 150, 300, 500 | 2 reference devices, 18 devices with s-fold error rates | 8 |
+| `shots_and_noise_4c` | as `shots_and_noise`, four classes, three layers | 50 and 2 |
+
+Every (scenario, seed, method) is one file under `results/`, and finished tasks are skipped when a stage is
+run again.  The step sizes are selected on eight tuning seeds (100 to 107) by the final test accuracy, and the
+reported runs use the seeds 0 to 15.  The complete campaign takes about three hours on 14 cores.
+
+A single federated run with all methods in lockstep, on the local simulator or on the Quantinuum emulator
+(the latter requires an account with access to `reimei-E` and `qnx login`):
+
+```bash
+python scripts/run_federated.py --scenario shots_and_noise --backend local --seeds 0
+python scripts/run_federated.py --scenario shots_and_noise --backend nexus --device reimei-E --seeds 0
+```
+
+The same command with `--device reimei` submits the experiment to the processor.  Finished jobs are cached
+under `results/<name>/nexus-cache-seed<seed>/`, and an interrupted run resumes without resubmitting them.
+The Nexus interface has been checked offline against a noiseless Aer simulation (`tests/test_programs.py`)
+and has not yet been run against the Nexus service.
+
+## Results
+
+Final test accuracy on the reference device (mean over 16 seeds of the average over the last ten rounds).
+The last column is the accuracy of QFedQGT minus that of QFedAvg and of QFedFisher in percentage points,
+with the standard error of the paired difference.
+
+| Scenario | QFedAvg | QFedFisher | QFedQGT | Difference |
+| :-- | :-: | :-: | :-: | :-: |
+| `shots_and_noise` | 0.776 | 0.815 | 0.916 | +14.0 ± 2.4, +10.1 ± 1.6 |
+| `noise_only_x500` | 0.805 | 0.788 | 0.856 | +5.1 ± 1.7, +6.8 ± 2.2 |
+| `noise_only_x300` | 0.784 | 0.809 | 0.844 | +5.9 ± 1.5, +3.4 ± 1.6 |
+| `noise_only_x150` | 0.873 | 0.905 | 0.897 | +2.4 ± 2.1, -0.8 ± 1.4 |
+| `noise_only_x50` | 0.921 | 0.954 | 0.941 | +2.0 ± 1.7, -1.3 ± 0.8 |
+| `noise_only_x1` | 0.957 | 0.966 | 0.957 | 0.0 ± 0.5, -0.9 ± 0.7 |
+| `shots_and_noise_4c` | 0.431 | 0.414 | 0.594 | +16.3 ± 1.8, +18.0 ± 2.1 |
+
+The complete tables, including the ablation of the preconditioner and of the weights, are in the paper.
+The accuracy of the baselines depends on the step size.  `results/sens-<scenario>/` contains the runs for every
+step size of the grids on the reported seeds, which give the step-size sensitivity table of the paper.
+The numbers come from the density-matrix simulation of a gate-level noise model (`--backend local`).
 
 ## License
 

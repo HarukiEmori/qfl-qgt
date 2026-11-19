@@ -14,3 +14,12 @@ venv/
 .env
 
 # Note: *.pkl, *.npy and *.txt result files are intentionally NOT ignored (they are the published data).
+
+# Test cache
+.pytest_cache/
+
+# Public dataset, fetched by scripts/download_mnist.py
+data/mnist.npz
+
+# Local caches of finished emulator jobs are kept; checkpoints of interrupted runs are not
+results/**/checkpoint-seed*.npz

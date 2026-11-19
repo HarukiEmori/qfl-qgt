@@ -1,0 +1,47 @@
+{
+ "noise_only_x1": {
+  "QFedAvg": 0.6,
+  "QFedFisher": 0.6,
+  "QFedQGT": 0.2
+ },
+ "noise_only_x150": {
+  "QFedAvg": 1.0,
+  "QFedFisher": 0.6,
+  "QFedQGT": 0.1
+ },
+ "noise_only_x300": {
+  "QFedAvg": 2.0,
+  "QFedFisher": 0.6,
+  "QFedQGT": 0.1
+ },
+ "noise_only_x50": {
+  "QFedAvg": 1.0,
+  "QFedFisher": 0.6,
+  "QFedQGT": 0.2
+ },
+ "noise_only_x500": {
+  "Bures+data": 0.025,
+  "Euclid+re": 2.0,
+  "QFedAvg": 2.0,
+  "QFedAvg-shots": 2.0,
+  "QFedFisher": 1.0,
+  "QFedQGT": 0.1,
+  "QFedQGT-invvar": 0.1,
+  "QNG+data": 0.5
+ },
+ "shots_and_noise": {
+  "Bures+data": 0.05,
+  "Euclid+re": 1.0,
+  "QFedAvg": 0.6,
+  "QFedAvg-shots": 0.6,
+  "QFedFisher": 0.3,
+  "QFedQGT": 0.1,
+  "QFedQGT-invvar": 0.1,
+  "QNG+data": 0.3
+ },
+ "shots_and_noise_4c": {
+  "QFedAvg": 0.6,
+  "QFedFisher": 0.3,
+  "QFedQGT": 0.2
+ }
+}
