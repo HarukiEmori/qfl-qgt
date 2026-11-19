@@ -28,7 +28,22 @@ import numpy as np
 
 from . import provenance, sim
 
-__all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor"]
+__all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor", "login_status"]
+
+
+def login_status() -> str:
+    """Whether the stored Nexus login works, as a sentence.  The account is not shown.
+
+    Call this at the start of every task that submits jobs.  If the login has expired, run
+    ``qnx login`` in a terminal (browser authentication) and call the function again.
+    """
+    try:
+        import qnexus as qnx
+
+        qnx.projects.get_all().count()
+    except Exception as exc:
+        return f"Nexus login: NOT valid ({type(exc).__name__}).  Run `qnx login` in a terminal."
+    return "Nexus login: valid"
 
 
 @dataclass(frozen=True)

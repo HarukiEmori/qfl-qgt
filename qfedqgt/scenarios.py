@@ -20,7 +20,7 @@ SWEEP_SCALES = (1, 50, 150, 300, 500)
 
 # emulator experiment (see below): multiplier on the emulator, matched multiplier of the local model,
 # and shots per circuit of the reference clients
-EMU_SCALE, EMU_LOCAL_SCALE, EMU_SHOTS_REFERENCE = 300.0, 370.0, 10
+EMU_SCALE, EMU_LOCAL_SCALE, EMU_SHOTS_REFERENCE = 300.0, 370.0, 30
 
 
 def _noise_only(scale: float) -> Scenario:
@@ -43,27 +43,32 @@ SCENARIOS = {
 RUN = RunConfig(rounds=40, batch=8, local_steps=1, echo_shots=20, eval_shots=100, eval_every=1)
 
 # --------------------------------------------------------------------------- emulator experiment
-# Training on the emulator reimei-E (scripts/run_emulator.py).  The emulator executes a few thousand
-# gate-shots per second, so the circuits have one layer (8 trainable parameters, 17 circuits per
-# parameter-shift gradient) and the shot budgets are small.  The task has four classes (digits 0 to 3,
-# one readout qubit per class).  ``gate_scales`` are the error-rate multipliers passed to the
+# Training on the emulator reimei-E (scripts/run_emulator.py).  On the emulator a job waits several
+# minutes in the queue and every distinct circuit costs about 0.1 to 0.2 seconds whatever its shot
+# count, so the experiment is designed around the number of distinct circuits: four clients, two
+# images per client and round, and one layer (8 trainable parameters, 17 circuits per
+# parameter-shift gradient).  The task has four classes (digits 0 to 3, one readout qubit per class).
+# Two clients are reference clients with 30 shots per circuit, and two clients have 300-fold error
+# rates and one shot per circuit.  ``gate_scales`` are the error-rate multipliers passed to the
 # emulator; ``local_scales`` are the multipliers of the local gate-level model that reproduce the
 # echo survival measured on the emulator (results/nexus-geometry), and they are used only for the
 # step-size selection and for the prediction of the local model.
 _EMU = dict(classes=(0, 1, 2, 3), n_qubits=4, layers=1, beta=4.0, angle_scale=0.5, n_per_client=40,
             n_train_per_class=400, n_test_per_class=100,
-            gate_scales=(1.0,) * 2 + (EMU_SCALE,) * 12, local_scales=(1.0,) * 2 + (EMU_LOCAL_SCALE,) * 12,
-            shots=(EMU_SHOTS_REFERENCE,) * 2 + (1,) * 12)
+            gate_scales=(1.0,) * 2 + (EMU_SCALE,) * 2, local_scales=(1.0,) * 2 + (EMU_LOCAL_SCALE,) * 2,
+            shots=(EMU_SHOTS_REFERENCE,) * 2 + (1,) * 2)
 SCENARIOS["emulator_iid"] = Scenario(name="emulator_iid", **_EMU)
 # the same devices with a Dirichlet label partition (concentration 0.5)
 SCENARIOS["emulator_dirichlet"] = Scenario(name="emulator_dirichlet", alpha=0.5, **_EMU)
 
 EMULATOR_SCENARIOS = ("emulator_iid", "emulator_dirichlet")
 SIMULATION_SCENARIOS = tuple(k for k in SCENARIOS if k not in EMULATOR_SCENARIOS)
-EMULATOR_SEEDS = (0, 1, 2)
-EMULATOR_RUN = RunConfig(rounds=30, batch=8, local_steps=1, echo_shots=5, eval_shots=10, eval_every=1)
+EMULATOR_SEEDS = (0, 1, 2, 3, 4, 5)
+EMULATOR_RUN = RunConfig(rounds=15, batch=2, local_steps=1, echo_shots=5, eval_shots=20, eval_every=1)
 EMULATOR_TAIL = 5              # the reported accuracy is the mean over the last rounds
-EMULATOR_SEGMENTS = 132        # circuits packed into one program
+EMULATOR_SEGMENTS = 528        # circuits packed into one program (a program of 2112 circuits was not accepted in time)
+EMULATOR_PROGRAMS_PER_JOB = 3  # the emulator runs two jobs at a time, so the programs of a round are spread over several jobs
+EMULATOR_EVAL_INPUTS = 60      # test images of the evaluation on the emulator (the same number from every class)
 
 
 def run_config(scenario: str) -> RunConfig:

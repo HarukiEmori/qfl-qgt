@@ -90,13 +90,19 @@ class SharedExecutor:
     call of the underlying executor, in the order of the run indices.  The order is fixed so
     that a restarted campaign builds the same programs and finds its results in the cache.
     On an emulator, the circuits of all runs then wait in the queue once per step.
+
+    With ``separate=True`` the circuits of different runs are never packed into the same
+    program (``Request.group``), so that runs can be added to or removed from a campaign
+    without invalidating the cache.  The default packs the runs together, which gives fewer
+    and longer programs; the emulator executes these faster.
     """
 
-    def __init__(self, executor, parties: int):
+    def __init__(self, executor, parties: int, separate: bool = False):
         import threading
 
         self.executor = executor
         self.parties = parties
+        self.separate = separate
         self._pending = [None] * parties
         self._barrier = threading.Barrier(parties, action=self._flush)
         self.error = None
@@ -123,8 +129,9 @@ class _SharedView:
     def run(self, requests: list) -> None:
         import threading
 
-        for req in requests:
-            req.group = self.index
+        if self.shared.separate:
+            for req in requests:
+                req.group = self.index
         self.shared._pending[self.index] = list(requests)
         try:
             self.shared._barrier.wait()

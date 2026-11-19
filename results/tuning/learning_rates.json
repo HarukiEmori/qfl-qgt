@@ -1,11 +1,11 @@
 {
  "emulator_dirichlet": {
   "QFedAvg": 0.3,
-  "QFedFisher": 0.3,
+  "QFedFisher": 0.15,
   "QFedQGT": 0.1
  },
  "emulator_iid": {
-  "QFedAvg": 0.3,
+  "QFedAvg": 0.6,
   "QFedFisher": 0.3,
   "QFedQGT": 0.1
  },

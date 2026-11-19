@@ -56,6 +56,11 @@ def main(argv=None) -> None:
     ap.add_argument("--rounds", type=int, default=None, help="override the number of rounds (for tests)")
     ap.add_argument("--segments", type=int, default=S.EMULATOR_SEGMENTS, help="circuits packed into one program")
     ap.add_argument("--no-eval", action="store_true", help="skip the evaluation of the final models on the device")
+    ap.add_argument("--eval-inputs", type=int, default=S.EMULATOR_EVAL_INPUTS,
+                    help="test images used for the evaluation on the device (the same number from every class)")
+    ap.add_argument("--programs-per-job", type=int, default=S.EMULATOR_PROGRAMS_PER_JOB, help="programs of one Nexus job")
+    ap.add_argument("--separate-runs", action="store_true",
+                    help="never pack circuits of different runs into one program (runs can then be added later)")
     ap.add_argument("--timeout", type=float, default=12 * 3600.0, help="seconds to wait for one job")
     a = ap.parse_args(argv)
 
@@ -73,7 +78,7 @@ def main(argv=None) -> None:
             device_factory = lambda scale, role, k: DeviceProfile("aer", scale, noisy=False)      # noqa: E731
         else:
             executor = NexusExecutor(a.project, os.path.join(out_dir, "cache"), segments=a.segments,
-                                     run_name=name, timeout=a.timeout)
+                                     run_name=name, timeout=a.timeout, max_programs_per_job=a.programs_per_job)
             device_factory = lambda scale, role, k: DeviceProfile(a.device, scale)               # noqa: E731
 
     # -- setup of every run
@@ -91,10 +96,11 @@ def main(argv=None) -> None:
     parameters = dict(scenarios=a.scenarios, seeds=a.seeds, methods=a.methods,
                       rounds=setups[0]["cfg"].rounds, batch=setups[0]["cfg"].batch,
                       echo_shots=setups[0]["cfg"].echo_shots, eval_shots=setups[0]["cfg"].eval_shots,
+                      eval_inputs=a.eval_inputs,
                       shots_per_circuit={s: sorted(set(S.SCENARIOS[s].shots)) for s in a.scenarios},
                       error_rate_multipliers={s: sorted(set(S.SCENARIOS[s].gate_scales)) for s in a.scenarios},
                       learning_rates={s: {m: S.learning_rates(s)[m] for m in a.methods} for s in a.scenarios},
-                      segments=a.segments)
+                      segments=a.segments, programs_per_job=a.programs_per_job)
     backend = {}
     if a.backend == "local":
         backend = dict(local_multipliers={s: sorted(set(S.SCENARIOS[s].local_scales or S.SCENARIOS[s].gate_scales))
@@ -102,7 +108,7 @@ def main(argv=None) -> None:
 
     with provenance.record_run("federated training of several runs in lockstep", entry="scripts/run_emulator.py",
                                executor=executor, backend=backend, parameters=parameters, save_to=out_dir) as rec:
-        shared = SharedExecutor(executor, parties=len(setups))
+        shared = SharedExecutor(executor, parties=len(setups), separate=a.separate_runs)
         results, errors = [None] * len(setups), [None] * len(setups)
         t0 = time.time()
         lock = threading.Lock()
@@ -137,8 +143,13 @@ def main(argv=None) -> None:
             first = shared.error or next(e for e in failed if "shared execution stopped" not in str(e))
             raise first
 
-        # -- evaluation of the models of the last rounds on the reference profile of the device
+        # -- evaluation of the models of the last rounds on the reference profile of the device,
+        #    on a class-balanced subset of the test images (the noiseless accuracy uses all of them)
         evals = {}
+        for s in setups:
+            y = s["ds"].y_test
+            per_class = max(1, a.eval_inputs // len(s["sc"].classes))
+            s["eval_idx"] = np.sort(np.concatenate([np.flatnonzero(y == c)[:per_class] for c in range(len(s["sc"].classes))]))
         if not a.no_eval:
             reqs = []
             for i, s in enumerate(setups):
@@ -146,8 +157,8 @@ def main(argv=None) -> None:
                 for m in a.methods:
                     thetas = results[i][m]["theta"]
                     for r in range(max(1, len(thetas) - tail), len(thetas)):
-                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test, thetas[r]), s["cfg"].eval_shots,
-                                      tag="eval", group=i)
+                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test[s["eval_idx"]], thetas[r]),
+                                      s["cfg"].eval_shots, tag="eval", group=i if a.separate_runs else 0)
                         evals[(i, m, r)] = req
                         reqs.append(req)
             executor.run(reqs)
@@ -167,7 +178,7 @@ def main(argv=None) -> None:
                 acc_dev = []
                 for r in rounds:
                     phi = evals[(i, m, r)].counts[0] @ s["model"].obs / s["cfg"].eval_shots
-                    acc_dev.append(float((s["model"].predict(phi) == s["ds"].y_test).mean()))
+                    acc_dev.append(float((s["model"].predict(phi) == s["ds"].y_test[s["eval_idx"]]).mean()))
                 flat[f"{m}/eval_rounds"] = np.array(rounds)
                 flat[f"{m}/acc_device"] = np.array(acc_dev)
                 row["final"][m] = dict(accuracy_device=float(np.mean(acc_dev)) if acc_dev else None,
