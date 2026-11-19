@@ -33,6 +33,20 @@ from qfedqgt.nexus import DeviceProfile, NexusExecutor                # noqa: E4
 from qfedqgt.scenarios import SCENARIOS                               # noqa: E402
 
 
+def matched_scale(template, A, n, target, lo=1.0, hi=3000.0):
+    """Multiplier of the local gate-level model at which its echo survival equals ``target`` (None if out of range)."""
+    def survival(scale):
+        noise = sim.NoiseModel.reimei().scaled(scale)
+        return float(sim.probabilities(sim.density(template, A, noise), noise, n)[:, 0].mean())
+
+    if not survival(hi) < target < survival(lo):
+        return None
+    for _ in range(50):
+        mid = 0.5 * (lo + hi)
+        lo, hi = (mid, hi) if survival(mid) > target else (lo, mid)
+    return float(0.5 * (lo + hi))
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--device", default="reimei-E")
@@ -76,7 +90,8 @@ def main(argv=None) -> None:
             p_loc = float(geo.depolarizing_from_purity(max(local, 1.0 / N), N))
             rows.append(dict(scale=s, samples=n, survival=surv, survival_se=err, survival_local=local,
                              p_hat=p_hat, p_hat_local=p_loc, kappa=float(geo.kappa(min(p_hat, 0.999), N)),
-                             kappa_local=float(geo.kappa(min(p_loc, 0.999), N))))
+                             kappa_local=float(geo.kappa(min(p_loc, 0.999), N)),
+                             matched_local_scale=matched_scale(e, A, t.n, surv)))
             print(f"x{s:<5g} survival {surv:.3f}+/-{err:.3f} (local model {local:.3f})  p_hat {p_hat:.3f} (local {p_loc:.3f})",
                   flush=True)
         os.makedirs(out_dir, exist_ok=True)

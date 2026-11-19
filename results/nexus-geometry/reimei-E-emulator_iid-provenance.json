@@ -3,9 +3,12 @@
  "entry": "scripts/nexus_geometry.py",
  "program": {
   "repository": "https://github.com/HarukiEmori/qfl-qgt",
-  "commit": "ecf95b8b6dda126a5c207a60eb5ed3a7bded4d26",
+  "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
   "branch": "main",
-  "modified": []
+  "modified": [
+   "scripts/make_figures.py",
+   "scripts/nexus_geometry.py"
+  ]
  },
  "environment": {
   "python": "3.13.16",
@@ -48,9 +51,9 @@
   "inputs": 8,
   "seed": 0
  },
- "started": "2026-11-19T01:42:20-0800",
- "finished": "2026-11-19T01:46:38-0800",
- "duration_s": 257.9,
+ "started": "2026-11-19T03:32:53-0800",
+ "finished": "2026-11-19T03:32:53-0800",
+ "duration_s": 0.3,
  "jobs": [
   {
    "job_id": "a52b74be-f77d-436c-a585-f6b4cd1575d5",
@@ -67,7 +70,7 @@
    "modified": false,
    "completed": "2026-11-19T01:45:53-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "dced3170-11c2-4f02-a3a2-6e90e11ae4e2",
@@ -84,7 +87,7 @@
    "modified": false,
    "completed": "2026-11-19T01:45:54-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "b3165349-1c9f-4144-a3b6-0a6bbd84e114",
@@ -101,7 +104,7 @@
    "modified": false,
    "completed": "2026-11-19T01:46:10-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "08980855-2560-4822-a0b5-5a6582e4068d",
@@ -118,7 +121,7 @@
    "modified": false,
    "completed": "2026-11-19T01:46:35-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "69daad1e-c5a2-4348-8524-b5af34a4fe73",
@@ -135,7 +138,7 @@
    "modified": false,
    "completed": "2026-11-19T01:46:35-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "0da20a97-7570-4fa5-b588-99ccf81c924d",
@@ -152,7 +155,7 @@
    "modified": false,
    "completed": "2026-11-19T01:46:38-0800",
    "cost": 23.56,
-   "source": "submitted"
+   "source": "cache"
   }
  ],
  "usage": {
@@ -165,5 +168,7 @@
   "results/nexus-geometry/reimei-E-emulator_iid.json",
   "results/nexus-geometry/reimei-E-emulator_iid-provenance.json"
  ],
- "notes": []
+ "notes": [
+  "the working tree differed from the commit; the commit alone does not reproduce this run"
+ ]
 }

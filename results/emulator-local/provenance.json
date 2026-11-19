@@ -1,0 +1,119 @@
+{
+ "task": "federated training of several runs in lockstep",
+ "entry": "scripts/run_emulator.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "98b4c346ce7bc9ca277f2b8ec473a23ade9e3152",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "local simulation (exact outcome distributions of the gate-level noise model, multinomial sampling of the shots)",
+  "local_multipliers": {
+   "emulator_iid": [
+    1.0,
+    370.0
+   ],
+   "emulator_dirichlet": [
+    1.0,
+    370.0
+   ]
+  }
+ },
+ "parameters": {
+  "scenarios": [
+   "emulator_iid",
+   "emulator_dirichlet"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "methods": [
+   "QFedAvg",
+   "QFedFisher",
+   "QFedQGT"
+  ],
+  "rounds": 15,
+  "batch": 2,
+  "echo_shots": 5,
+  "eval_shots": 20,
+  "eval_inputs": 60,
+  "shots_per_circuit": {
+   "emulator_iid": [
+    1,
+    30
+   ],
+   "emulator_dirichlet": [
+    1,
+    30
+   ]
+  },
+  "error_rate_multipliers": {
+   "emulator_iid": [
+    1.0,
+    300.0
+   ],
+   "emulator_dirichlet": [
+    1.0,
+    300.0
+   ]
+  },
+  "learning_rates": {
+   "emulator_iid": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "emulator_dirichlet": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   }
+  },
+  "segments": 528,
+  "programs_per_job": 3
+ },
+ "started": "2026-11-19T03:27:26-0800",
+ "finished": "2026-11-19T03:27:32-0800",
+ "duration_s": 5.9,
+ "jobs": [],
+ "usage": {
+  "n_circuits": 85680,
+  "n_shots": 1361520
+ },
+ "outputs": [
+  "results/emulator-local/emulator_iid-seed0.npz",
+  "results/emulator-local/emulator_iid-seed1.npz",
+  "results/emulator-local/emulator_iid-seed2.npz",
+  "results/emulator-local/emulator_iid-seed3.npz",
+  "results/emulator-local/emulator_iid-seed4.npz",
+  "results/emulator-local/emulator_iid-seed5.npz",
+  "results/emulator-local/emulator_dirichlet-seed0.npz",
+  "results/emulator-local/emulator_dirichlet-seed1.npz",
+  "results/emulator-local/emulator_dirichlet-seed2.npz",
+  "results/emulator-local/emulator_dirichlet-seed3.npz",
+  "results/emulator-local/emulator_dirichlet-seed4.npz",
+  "results/emulator-local/emulator_dirichlet-seed5.npz",
+  "results/emulator-local/summary.json",
+  "results/emulator-local/provenance.json"
+ ],
+ "notes": []
+}

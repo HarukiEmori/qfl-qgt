@@ -4,6 +4,7 @@
     python scripts/make_figures.py geometry            # direct evaluation of the geometry
     python scripts/make_figures.py training            # accuracy and loss against the round
     python scripts/make_figures.py sweep               # final accuracy against the noise of the clients
+    python scripts/make_figures.py emulator [dir]      # training on the emulator (default: emulator-reimei-E)
     python scripts/make_figures.py table <dir> ...     # LaTeX rows of a results table
     python scripts/make_figures.py all
 
@@ -149,6 +150,60 @@ def sweep(scales=SWEEP, out="sweep.pdf", methods=("QFedAvg", "QFedFisher", "QFed
     print(f"wrote figures/{out}")
 
 
+EMULATOR_PANELS = (("emulator_iid", "(a) IID data"), ("emulator_dirichlet", "(b) Dirichlet partition"))
+
+
+def load_runs(directory: str, scenario: str) -> dict:
+    """{method: {key: array (seeds, ...)}} from the run files ``<scenario>-seed<k>.npz`` of scripts/run_emulator.py."""
+    path = directory if os.path.isdir(directory) else os.path.join(ROOT, "results", directory)
+    out = {}
+    for f in sorted(glob.glob(os.path.join(path, f"{scenario}-seed*.npz"))):
+        z = np.load(f)
+        for key in z.files:
+            m, k = key.split("/")
+            out.setdefault(m, {}).setdefault(k, []).append(z[key])
+    return {m: {k: np.array(v) for k, v in d.items()} for m, d in out.items()}
+
+
+def emulator(directory="emulator-reimei-E", out="emulator.pdf", methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:
+    """Training on the emulator: accuracy of the global model against the round.
+
+    Lines: accuracy of the noiseless circuit with the parameters trained on the emulator (mean over the
+    seeds, standard error as a band).  Markers: accuracy measured on the emulator for the models of the
+    last rounds (mean over the seeds, standard error as a bar).
+    """
+    fig, ax = plt.subplots(1, len(EMULATOR_PANELS), figsize=(3.3 * len(EMULATOR_PANELS), 2.7), squeeze=False, sharey=True)
+    for j, (scenario, title) in enumerate(EMULATOR_PANELS):
+        res = load_runs(directory, scenario)
+        for m in methods:
+            if m not in res:
+                continue
+            h, st = res[m], STYLE[m]
+            y = np.asarray(h["acc_exact"], float)
+            rounds = np.arange(y.shape[1])
+            mean = y.mean(axis=0)
+            ax[0, j].plot(rounds, mean, color=st["color"], ls=st["ls"], lw=1.3, label=st["label"])
+            if y.shape[0] > 1:
+                se = y.std(axis=0, ddof=1) / np.sqrt(y.shape[0])
+                ax[0, j].fill_between(rounds, mean - se, mean + se, color=st["color"], alpha=0.18, lw=0)
+            if "acc_device" in h and np.asarray(h["acc_device"]).size:
+                d = np.asarray(h["acc_device"], float)
+                x = np.asarray(h["eval_rounds"][0], float)
+                err = d.std(axis=0, ddof=1) / np.sqrt(d.shape[0]) if d.shape[0] > 1 else None
+                ax[0, j].errorbar(x, d.mean(axis=0), yerr=err, color=st["color"], marker=st["marker"], ms=3.5, ls="none",
+                                  capsize=1.5, lw=0.8, mfc="white")
+        ax[0, j].axhline(0.25, color="0.6", lw=0.6, ls=":")
+        ax[0, j].set_xlabel("Communication round")
+        ax[0, j].set_title(title, loc="left", fontsize=9)
+    ax[0, 0].set_ylabel("Test accuracy")
+    ax[0, 0].legend(frameon=False, loc="upper left")
+    ax[0, 0].set_ylim(0.15, 0.6)
+    fig.tight_layout()
+    os.makedirs(FIG, exist_ok=True)
+    fig.savefig(os.path.join(FIG, out))
+    print(f"wrote figures/{out}")
+
+
 def table(dirs, tail=TAIL, methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:
     """Final accuracy on the reference device, exact accuracy and exact loss (mean and standard error)."""
     for d in dirs:
@@ -176,7 +231,11 @@ if __name__ == "__main__":
         training()
     elif cmd == "sweep":
         sweep()
+    elif cmd == "emulator":
+        emulator(*sys.argv[2:3])
     elif cmd == "table":
         table(sys.argv[2:])
     elif cmd == "all":
         geometry(); training(); sweep()
+        if os.path.exists(os.path.join(ROOT, "results", "emulator-reimei-E", "summary.json")):
+            emulator()
