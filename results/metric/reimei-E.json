@@ -15,7 +15,8 @@
  ],
  "cost_charged_hqc": 3292.6400000000012,
  "cost_formula_hqc": 3687.2000000000003,
- "date": "2026-11-19T01:38:31-0800",
+ "jobs_submitted_from": "2026-11-19T01:10:49-0800",
+ "jobs_completed_by": "2026-11-19T01:37:31-0800",
  "rows": [
   {
    "scale": 1.0,

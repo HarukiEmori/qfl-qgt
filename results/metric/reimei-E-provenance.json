@@ -3,9 +3,12 @@
  "entry": "scripts/nexus_metric.py",
  "program": {
   "repository": "https://github.com/HarukiEmori/qfl-qgt",
-  "commit": "b0d5defd17b1a34d3b0095e4e8058db5e98643c6",
+  "commit": "590741b058c461fce72cc355c4228509af82f0a1",
   "branch": "main",
-  "modified": []
+  "modified": [
+   "notebooks/",
+   "scripts/nexus_metric.py"
+  ]
  },
  "environment": {
   "python": "3.13.16",
@@ -50,9 +53,9 @@
   "seed": 0,
   "local_scale_factor": 1.0
  },
- "started": "2026-11-19T01:10:42-0800",
- "finished": "2026-11-19T01:38:31-0800",
- "duration_s": 1669.4,
+ "started": "2026-11-19T04:06:40-0800",
+ "finished": "2026-11-19T04:07:03-0800",
+ "duration_s": 23.3,
  "jobs": [
   {
    "job_id": "a91b9015-6180-4c80-b42e-ce1f33502fd7",
@@ -67,7 +70,7 @@
    "modified": false,
    "completed": "2026-11-19T01:37:27-0800",
    "cost": 1646.3200000000006,
-   "source": "submitted"
+   "source": "cache"
   },
   {
    "job_id": "0df41450-7fd6-4e71-b095-fe2d9b8154cb",
@@ -82,7 +85,7 @@
    "modified": false,
    "completed": "2026-11-19T01:37:31-0800",
    "cost": 1646.3200000000006,
-   "source": "submitted"
+   "source": "cache"
   }
  ],
  "usage": {
@@ -95,5 +98,7 @@
   "results/metric/reimei-E.json",
   "results/metric/reimei-E-provenance.json"
  ],
- "notes": []
+ "notes": [
+  "the working tree differed from the commit; the commit alone does not reproduce this run"
+ ]
 }

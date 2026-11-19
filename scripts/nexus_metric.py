@@ -133,9 +133,13 @@ def main(argv=None) -> None:
                   f"rms dev {row['rms_deviation_from_exact']:.3f} / se {row['rms_standard_error']:.3f}", flush=True)
         path = os.path.join(out_dir, f"{name}.json")
         with open(path, "w") as f:
+            jobs = getattr(ex, "job_records", [])
             json.dump(dict(backend=a.backend, device=name, shots=a.shots, seed=a.seed, parameters=params,
-                           cost_charged_hqc=getattr(ex, "cost_charged", 0.0), cost_formula_hqc=getattr(ex, "cost_estimate", 0.0),
-                           date=provenance.now(), rows=rows), f, indent=1)
+                           cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
+                           cost_formula_hqc=getattr(ex, "cost_estimate", 0.0),
+                           jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),
+                           jobs_completed_by=max((j["completed"] for j in jobs if j.get("completed")), default=""),
+                           rows=rows), f, indent=1)
         rec.outputs.append(path)
 
 
