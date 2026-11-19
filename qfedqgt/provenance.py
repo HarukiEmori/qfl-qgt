@@ -33,7 +33,8 @@ import sys
 import time
 from dataclasses import dataclass, field, asdict
 
-__all__ = ["ROOT", "program_info", "environment_info", "RunRecord", "record_run", "load_record", "now"]
+__all__ = ["ROOT", "program_info", "environment_info", "RunRecord", "record_run", "load_record", "now",
+           "write_json", "write_arrays"]
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PACKAGES = ("numpy", "scipy", "pytket", "qnexus", "quantinuum-schemas", "pytket-qiskit", "matplotlib")
@@ -231,7 +232,8 @@ def _executor_backend(executor) -> dict:
 
 @contextlib.contextmanager
 def record_run(task: str, entry: str = "", executor=None, backend: dict | None = None,
-               parameters: dict | None = None, save_to: str | None = None, show: bool = True):
+               parameters: dict | None = None, save_to: str | None = None, show: bool = True,
+               replay: bool = False):
     """Context manager that records a run and shows the record when the block ends.
 
     ``executor`` is the object that runs the circuits; its ``describe()`` gives the backend
@@ -239,6 +241,9 @@ def record_run(task: str, entry: str = "", executor=None, backend: dict | None =
     to ``<save_to>/provenance.json``) or a path ending in ``.json``.  The record is shown and
     saved even if the block raises, with the error noted, so that an interrupted run leaves a
     trace of the jobs it submitted.
+
+    ``replay=True`` marks a run that only reads the cache.  Its record is shown as usual, and a
+    stored record of the original run is kept instead of being overwritten.
     """
     rec = RunRecord(task=task, entry=entry or _relative(sys.argv[0] or "interactive"),
                     program=program_info(), environment=environment_info(),
@@ -265,10 +270,13 @@ def record_run(task: str, entry: str = "", executor=None, backend: dict | None =
         if save_to:
             path = save_to if save_to.endswith(".json") else os.path.join(save_to, "provenance.json")
             rec.outputs = [_relative(p) for p in rec.outputs]
-            rec.save(path)
-            if _relative(path) not in rec.outputs:
-                rec.outputs.append(_relative(path))
+            if replay and os.path.exists(path):
+                rec.notes.append(f"replay from the cache: the stored record {_relative(path)} of the original run is kept")
+            else:
                 rec.save(path)
+                if _relative(path) not in rec.outputs:
+                    rec.outputs.append(_relative(path))
+                    rec.save(path)
         if show:
             rec.show()
 
@@ -277,3 +285,47 @@ def load_record(path: str) -> RunRecord:
     """Read a saved record (for display in a notebook)."""
     with open(path) as f:
         return RunRecord(**json.load(f))
+
+
+
+def _without(value, ignore):
+    if isinstance(value, dict):
+        return {k: _without(v, ignore) for k, v in value.items() if k not in ignore}
+    if isinstance(value, (list, tuple)):
+        return [_without(v, ignore) for v in value]
+    return value
+
+
+def write_json(path: str, data, replay: bool = False, ignore: tuple = (), default=float) -> str:
+    """Write a JSON result file.  Returns ``"written"``, ``"reproduced"`` or ``"differs"``.
+
+    In a replay from the cache (``replay=True``) an existing file is never overwritten.  The new
+    result is compared with the stored one (apart from the keys in ``ignore``, at any depth), and
+    the outcome is printed, so that a replay checks that the stored result follows from the cache.
+    """
+    text = json.dumps(data, indent=1, default=default)
+    if replay and os.path.exists(path):
+        with open(path) as f:
+            stored = json.load(f)
+        same = _without(stored, ignore) == _without(json.loads(text), ignore)
+        print(f"replay from the cache: {_relative(path)} "
+              + ("is reproduced" if same else "DIFFERS from the stored file (the stored file is kept)"), flush=True)
+        return "reproduced" if same else "differs"
+    with open(path, "w") as f:
+        f.write(text)
+    return "written"
+
+
+def write_arrays(path: str, arrays: dict, replay: bool = False) -> str:
+    """The same for a compressed ``.npz`` file of arrays."""
+    import numpy as np
+
+    if replay and os.path.exists(path):
+        stored = np.load(path)
+        same = set(stored.files) == set(arrays) and all(
+            np.array_equal(stored[k], np.asarray(v), equal_nan=np.asarray(v).dtype.kind == "f") for k, v in arrays.items())
+        if not same:
+            print(f"replay from the cache: {_relative(path)} DIFFERS from the stored file (the stored file is kept)", flush=True)
+        return "reproduced" if same else "differs"
+    np.savez_compressed(path, **arrays)
+    return "written"

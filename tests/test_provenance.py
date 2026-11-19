@@ -53,3 +53,29 @@ def test_error_notes_do_not_contain_absolute_paths(tmp_path, capsys):
     capsys.readouterr()
     assert provenance.ROOT not in rec.notes[0] and os.path.expanduser("~") not in rec.notes[0]
     assert "results/x.npz" in rec.notes[0]
+
+
+def test_replay_keeps_stored_results(tmp_path, capsys):
+    """A replay from the cache compares with stored files and never overwrites them."""
+    import numpy as np
+
+    from qfedqgt import provenance as pv
+
+    path = str(tmp_path / "result.json")
+    assert pv.write_json(path, dict(a=1.0, seconds=3.0)) == "written"
+    assert pv.write_json(path, dict(a=1.0, seconds=9.0), replay=True, ignore=("seconds",)) == "reproduced"
+    assert pv.write_json(path, dict(a=2.0, seconds=9.0), replay=True, ignore=("seconds",)) == "differs"
+    with open(path) as f:
+        assert json.load(f) == dict(a=1.0, seconds=3.0)                      # the stored file is untouched
+    arrays = str(tmp_path / "run.npz")
+    assert pv.write_arrays(arrays, {"m/x": np.arange(4.0)}) == "written"
+    assert pv.write_arrays(arrays, {"m/x": np.arange(4.0)}, replay=True) == "reproduced"
+    assert pv.write_arrays(arrays, {"m/x": np.arange(4.0) + 1}, replay=True) == "differs"
+    assert np.array_equal(np.load(arrays)["m/x"], np.arange(4.0))
+    record = str(tmp_path / "provenance.json")
+    with pv.record_run("first", save_to=record, show=False):
+        pass
+    with pv.record_run("second", save_to=record, show=False, replay=True) as rec:
+        pass
+    assert pv.load_record(record).task == "first"
+    assert any("stored record" in note for note in rec.notes)

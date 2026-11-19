@@ -103,7 +103,9 @@ python scripts/run_federated.py --scenario shots_and_noise --backend nexus --dev
 
 The emulator experiments of the paper were run on 2026-11-19 through Quantinuum Nexus.  Their shot tables,
 job logs and run records are in `results/`, so that every command below reproduces its result from the cache
-without a login.  With `--cached-only` a script never submits a job and stops if a result is missing.  To
+without a login.  With `--cached-only` a script never submits a job and stops if a result is missing.  Such a
+replay recomputes the results from the stored shot tables, compares them with the stored result files, and
+reports whether they are reproduced; it does not overwrite the stored results or the stored run records.  To
 repeat a measurement on the emulator, remove its cache folder, log in with `qnx login`, and run the command
 without `--cached-only`.
 
@@ -112,20 +114,24 @@ python scripts/nexus_geometry.py --device reimei-E --shots 100 --cached-only    
 python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 100 200 300 400 500 --cached-only
 python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1 --cached-only
 python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --cached-only
+python scripts/emulator_summary.py                                                      # accuracies and paired differences
 python scripts/make_figures.py emulator
 ```
 
-The packing of the circuits of the training into programs changed after the fourth round (528 circuits per
-program, then 816).  It is stored in `results/emulator-reimei-E/packing.json` and is reused by the command above.
+The federated training is organized in campaigns (`EMULATOR_CAMPAIGNS` in `qfedqgt/scenarios.py`).  The runs of
+a campaign advance round by round together, and one results folder holds one campaign.  The seeds of a campaign
+and the packing of its circuits into programs are stored in `packing.json` of its folder and are reused by the
+command above.  In `results/emulator-reimei-E/` (seeds 0 to 5) the packing changed after the fourth round
+(528 circuits per program, then 816).
 
-The same steps are in `notebooks/reimei_E_experiments.ipynb`.
+The same steps are in `notebooks/reimei_E_experiments.ipynb`, which is stored with its output.
 
 | Result | Content |
 | :-- | :-- |
 | `results/nexus-geometry/reimei-E.json`, `reimei-E-emulator_iid.json` | Frequency of the all-zero outcome of echo circuits for several error-rate multipliers, the inferred noise strength, and the multiplier at which the local gate-level model has the same frequency |
 | `results/metric/reimei-E.json` | Two-copy measurement of the 8 x 8 block of the Bures metric of one layer (137 circuits on 8 qubits, 200 shots) |
 | `results/emulator-reimei-E/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, six seeds each |
-| `results/emulator-local/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds, 16 reported seeds, and every step size of the grids |
+| `results/emulator-local*/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds with the same grouping into campaigns, 16 reported seeds, and every step size of the grids |
 
 **Run records.**  Every script that executes circuits ends by showing a run record and saves it next to its
 results (`provenance.json`): which program produced the result (repository, commit, state of the working tree,
@@ -142,7 +148,7 @@ with record_run("my experiment", executor=executor, save_to="results/my-experime
 
 **What limits an experiment on the emulator.**  Measured on 2026-11-19:
 
-- A job waits between 3 and 20 minutes before it starts.  This wait occurs in every round of a training.
+- A job waits between 3 and 30 minutes before it starts.  This wait occurs in every round of a training.
 - The run time is set by the number of distinct circuits rather than by the shots.  A program of 528 four-qubit
   circuits took 13 s with one shot and about 3 minutes with 30 shots when it was the only program of its job.
   Jobs with several programs were much slower (2 to 4 minutes per program), so every program is submitted as
@@ -158,6 +164,29 @@ experiment is much smaller than the simulations.  Interrupted campaigns resume f
 the jobs that are still running (`qfedqgt/nexus.py`).
 
 ## Results
+
+### Emulator `reimei-E`
+
+Final test accuracy of the models trained on the emulator, as the mean over 6 seeds of the average over the last
+5 rounds.  `Device` is measured on the emulator (60 test images, 20 shots each), and `Noiseless` is the accuracy
+of the noiseless circuit with the same parameters on all 400 test images.  The differences are the accuracy of
+QFedQGT minus that of QFedAvg and of QFedFisher in percentage points with the standard error of the paired
+difference, followed by the number of seeds in which QFedQGT is higher.
+
+| Data | Accuracy | QFedAvg | QFedFisher | QFedQGT | Difference | Seeds |
+| :-- | :-- | :-: | :-: | :-: | :-: | :-: |
+| IID | Device | 0.321 | 0.273 | 0.391 | +7.0 ± 5.3, +11.7 ± 5.3 | 4/6, 5/6 |
+| IID | Noiseless | 0.323 | 0.314 | 0.416 | +9.4 ± 3.1, +10.3 ± 6.5 | 6/6, 4/6 |
+| Dirichlet partition | Device | 0.298 | 0.322 | 0.352 | +5.4 ± 3.1, +2.9 ± 2.7 | 6/6, 3/6 |
+| Dirichlet partition | Noiseless | 0.287 | 0.280 | 0.387 | +10.0 ± 5.2, +10.7 ± 3.0 | 6/6, 6/6 |
+
+Averaged over the two partitions, with one value per seed, the differences are +6.2 ± 4.1 and +7.3 ± 2.0 points on the device and
++9.7 ± 4.0 and +10.5 ± 2.8 points for the noiseless circuit.  Of the four differences measured on the device, one exceeds twice the standard error.
+The same experiment in the local gate-level model with 16 seeds (`results/sim-emulator_*`) gives differences of
++12.4 ± 2.4 and +13.7 ± 2.0 points (IID) and +9.8 ± 1.8 and +10.2 ± 2.3 points (Dirichlet partition).
+The 12 runs comprised 85,680 circuits and 1,361,520 shots in 134 jobs.  `python scripts/emulator_summary.py` prints these numbers.
+
+### Simulations with the gate-level noise model
 
 Final test accuracy on the reference device (mean over 16 seeds of the average over the last ten rounds).
 The last column is the accuracy of QFedQGT minus that of QFedAvg and of QFedFisher in percentage points,

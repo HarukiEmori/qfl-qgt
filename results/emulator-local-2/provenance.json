@@ -1,0 +1,132 @@
+{
+ "task": "federated training of several runs in lockstep",
+ "entry": "scripts/run_emulator.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "e585dfbdd4ba939c92d598bee218c8fcad634a23",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "local simulation (exact outcome distributions of the gate-level noise model, multinomial sampling of the shots)",
+  "local_multipliers": {
+   "emulator_iid": [
+    1.0,
+    370.0
+   ],
+   "emulator_dirichlet": [
+    1.0,
+    370.0
+   ]
+  }
+ },
+ "parameters": {
+  "scenarios": [
+   "emulator_iid",
+   "emulator_dirichlet"
+  ],
+  "seeds": [
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "methods": [
+   "QFedAvg",
+   "QFedFisher",
+   "QFedQGT"
+  ],
+  "rounds": 15,
+  "batch": 2,
+  "echo_shots": 5,
+  "eval_shots": 20,
+  "eval_inputs": 60,
+  "shots_per_circuit": {
+   "emulator_iid": [
+    1,
+    30
+   ],
+   "emulator_dirichlet": [
+    1,
+    30
+   ]
+  },
+  "error_rate_multipliers": {
+   "emulator_iid": [
+    1.0,
+    300.0
+   ],
+   "emulator_dirichlet": [
+    1.0,
+    300.0
+   ]
+  },
+  "learning_rates": {
+   "emulator_iid": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "emulator_dirichlet": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   }
+  },
+  "segments": 528,
+  "programs_per_job": 3,
+  "segments_schedule": []
+ },
+ "started": "2026-11-19T10:23:16-0800",
+ "finished": "2026-11-19T10:23:26-0800",
+ "duration_s": 9.3,
+ "jobs": [],
+ "usage": {
+  "n_circuits": 142800,
+  "n_shots": 2269200
+ },
+ "outputs": [
+  "results/emulator-local-2/emulator_iid-seed6.npz",
+  "results/emulator-local-2/emulator_iid-seed7.npz",
+  "results/emulator-local-2/emulator_iid-seed8.npz",
+  "results/emulator-local-2/emulator_iid-seed9.npz",
+  "results/emulator-local-2/emulator_iid-seed10.npz",
+  "results/emulator-local-2/emulator_iid-seed11.npz",
+  "results/emulator-local-2/emulator_iid-seed12.npz",
+  "results/emulator-local-2/emulator_iid-seed13.npz",
+  "results/emulator-local-2/emulator_iid-seed14.npz",
+  "results/emulator-local-2/emulator_iid-seed15.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed6.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed7.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed8.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed9.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed10.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed11.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed12.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed13.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed14.npz",
+  "results/emulator-local-2/emulator_dirichlet-seed15.npz",
+  "results/emulator-local-2/summary.json",
+  "results/emulator-local-2/provenance.json"
+ ],
+ "notes": []
+}

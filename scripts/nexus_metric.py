@@ -96,7 +96,7 @@ def main(argv=None) -> None:
                       qubits=t2.n, seed=a.seed, local_scale_factor=a.local_scale_factor)
     with provenance.record_run("two-copy measurement of the Bures metric", entry="scripts/nexus_metric.py",
                                executor=ex, parameters=parameters,
-                               save_to=os.path.join(out_dir, f"{name}-provenance.json")) as rec:
+                               save_to=os.path.join(out_dir, f"{name}-provenance.json"), replay=a.cached_only) as rec:
         reqs = [Request(dev, t2, A2, a.shots, tag=f"two-copy-x{s:g}") for dev, s in zip(devices, a.scales)]
         ex.run(reqs)
         G_pure = np.real(sim.pure_qgt(t, t.angles(x, theta))[0])[np.ix_(params, params)]
@@ -133,14 +133,15 @@ def main(argv=None) -> None:
                   f"exact {row['trace_local_exact']:.3f}, noiseless {row['trace_noiseless']:.3f})  "
                   f"rms dev {row['rms_deviation_from_exact']:.3f} / se {row['rms_standard_error']:.3f}", flush=True)
         path = os.path.join(out_dir, f"{name}.json")
-        with open(path, "w") as f:
-            jobs = getattr(ex, "job_records", [])
-            json.dump(dict(backend=a.backend, device=name, shots=a.shots, seed=a.seed, parameters=params,
-                           cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
-                           cost_formula_hqc=getattr(ex, "cost_estimate", 0.0),
-                           jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),
-                           jobs_completed_by=max((j["completed"] for j in jobs if j.get("completed")), default=""),
-                           rows=rows), f, indent=1)
+        jobs = getattr(ex, "job_records", [])
+        result = dict(backend=a.backend, device=name, shots=a.shots, seed=a.seed, parameters=params,
+                      cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
+                      cost_formula_hqc=getattr(ex, "cost_estimate", 0.0),
+                      jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),
+                      jobs_completed_by=max((j["completed"] for j in jobs if j.get("completed")), default=""),
+                      rows=rows)
+        # a replay from the cache compares with the stored file instead of overwriting it
+        provenance.write_json(path, result, replay=a.cached_only, ignore=("cost_charged_hqc",))
         rec.outputs.append(path)
 
 

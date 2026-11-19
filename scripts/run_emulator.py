@@ -130,7 +130,8 @@ def main(argv=None) -> None:
                                           for s in a.scenarios})
 
     with provenance.record_run("federated training of several runs in lockstep", entry="scripts/run_emulator.py",
-                               executor=executor, backend=backend, parameters=parameters, save_to=out_dir) as rec:
+                               executor=executor, backend=backend, parameters=parameters, save_to=out_dir,
+                               replay=a.cached_only) as rec:
         shared = SharedExecutor(executor, parties=len(setups), separate=a.separate_runs)
         results, errors = [None] * len(setups), [None] * len(setups)
         t0 = time.time()
@@ -186,7 +187,8 @@ def main(argv=None) -> None:
                         reqs.append(req)
             executor.run(reqs)
 
-        # -- output
+        # -- output (a replay from the cache compares with the stored files instead of overwriting them)
+        outcomes = []
         summary = dict(name=name, backend=a.backend, device=a.device if a.backend == "nexus" else a.backend,
                        tail=tail, methods=a.methods, runs=[], seconds=time.time() - t0)
         for i, s in enumerate(setups):
@@ -208,7 +210,7 @@ def main(argv=None) -> None:
                                        accuracy_noiseless=float(np.mean(h["acc_exact"][-tail:])),
                                        loss_noiseless=float(np.mean(h["loss_exact"][-tail:])))
             path = os.path.join(out_dir, f"{s['scenario']}-seed{s['seed']}.npz")
-            np.savez_compressed(path, **flat)
+            outcomes.append(provenance.write_arrays(path, flat, replay=a.cached_only))
             rec.outputs.append(path)
             row["scenario_definition"] = asdict(s["sc"])
             row["run"] = asdict(s["cfg"])
@@ -221,9 +223,12 @@ def main(argv=None) -> None:
                                 cost_formula_hqc=getattr(executor, "cost_estimate", None),
                                 cost_charged_hqc=getattr(executor, "cost_charged", None))
         path = os.path.join(out_dir, "summary.json")
-        with open(path, "w") as f:
-            json.dump(summary, f, indent=1, default=float)
+        outcomes.append(provenance.write_json(path, summary, replay=a.cached_only, ignore=("seconds", "cost_charged_hqc")))
         rec.outputs.append(path)
+        if a.cached_only:
+            n_same = sum(1 for o in outcomes if o == "reproduced")
+            print(f"replay from the cache: {n_same} of {len(outcomes)} stored result files are reproduced"
+                  + ("" if n_same == len(outcomes) else f" ({len(outcomes) - n_same} written or different)"), flush=True)
 
 
 if __name__ == "__main__":

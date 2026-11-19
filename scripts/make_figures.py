@@ -30,6 +30,7 @@ from qfedqgt import geometry as geo   # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIG = os.path.join(ROOT, "figures")
+PDF_METADATA = {"CreationDate": None}      # no time stamp, so that an unchanged figure gives an unchanged file
 STYLE = {
     "QFedAvg": dict(color="#1f77b4", ls="--", marker="s", label="QFedAvg"),
     "QFedFisher": dict(color="#2ca02c", ls="-.", marker="^", label="QFedFisher"),
@@ -82,7 +83,7 @@ def geometry() -> None:
         a.set_xlim(-0.02, pp.max() + 0.02); a.set_ylim(-0.03, 1.05)
     fig.tight_layout()
     os.makedirs(FIG, exist_ok=True)
-    fig.savefig(os.path.join(FIG, "geometry.pdf"))
+    fig.savefig(os.path.join(FIG, "geometry.pdf"), metadata=PDF_METADATA)
     print("wrote figures/geometry.pdf")
 
 
@@ -120,7 +121,7 @@ def training(panels=PANELS, key_acc="acc_shots", out="training.pdf", methods=("Q
     ax[0, 0].legend(frameon=False, loc="lower right")
     fig.tight_layout()
     os.makedirs(FIG, exist_ok=True)
-    fig.savefig(os.path.join(FIG, out))
+    fig.savefig(os.path.join(FIG, out), metadata=PDF_METADATA)
     print(f"wrote figures/{out}")
 
 
@@ -147,7 +148,7 @@ def sweep(scales=SWEEP, out="sweep.pdf", methods=("QFedAvg", "QFedFisher", "QFed
     ax.legend(frameon=False, loc="lower left")
     fig.tight_layout()
     os.makedirs(FIG, exist_ok=True)
-    fig.savefig(os.path.join(FIG, out))
+    fig.savefig(os.path.join(FIG, out), metadata=PDF_METADATA)
     print(f"wrote figures/{out}")
 
 
@@ -217,8 +218,9 @@ def emulator(directories=None, out="emulator.pdf", methods=("QFedAvg", "QFedFish
     ax[0, 0].set_ylim(0.15, 0.6)
     fig.tight_layout()
     os.makedirs(FIG, exist_ok=True)
-    fig.savefig(os.path.join(FIG, out))
-    print(f"wrote figures/{out}")
+    fig.savefig(os.path.join(FIG, out), metadata=PDF_METADATA)
+    fig.savefig(os.path.join(FIG, os.path.splitext(out)[0] + ".png"), dpi=200)      # shown by the notebook
+    print(f"wrote figures/{out} and figures/{os.path.splitext(out)[0]}.png")
 
 
 def table(dirs, tail=TAIL, methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:

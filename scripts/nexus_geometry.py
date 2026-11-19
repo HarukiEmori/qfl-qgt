@@ -78,7 +78,7 @@ def main(argv=None) -> None:
     with provenance.record_run("noise strength from echo circuits", entry="scripts/nexus_geometry.py", executor=ex,
                                parameters=dict(scenario=a.scenario, layers=sc.layers, scales=a.scales, shots=a.shots,
                                                inputs=a.inputs, seed=a.seed),
-                               save_to=os.path.join(out_dir, f"{stem}-provenance.json")) as rec:
+                               save_to=os.path.join(out_dir, f"{stem}-provenance.json"), replay=a.cached_only) as rec:
         ex.run(reqs)
         rows = []
         for s, req in zip(a.scales, reqs):
@@ -98,13 +98,14 @@ def main(argv=None) -> None:
         os.makedirs(out_dir, exist_ok=True)
         path = os.path.join(out_dir, f"{stem}.json")
         jobs = ex.job_records
-        with open(path, "w") as f:
-            json.dump(dict(device=a.device, scenario=a.scenario, layers=sc.layers, shots=a.shots, inputs=a.inputs, seed=a.seed,
-                           cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
-                           cost_formula_hqc=ex.cost_estimate,
-                           jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),
-                           jobs_completed_by=max((j["completed"] for j in jobs if j.get("completed")), default=""),
-                           rows=rows), f, indent=1)
+        result = dict(device=a.device, scenario=a.scenario, layers=sc.layers, shots=a.shots, inputs=a.inputs, seed=a.seed,
+                      cost_charged_hqc=float(sum(j["cost"] for j in jobs if isinstance(j.get("cost"), (int, float)))),
+                      cost_formula_hqc=ex.cost_estimate,
+                      jobs_submitted_from=min((j["submitted"] for j in jobs if j.get("submitted")), default=""),
+                      jobs_completed_by=max((j["completed"] for j in jobs if j.get("completed")), default=""),
+                      rows=rows)
+        # a replay from the cache compares with the stored file instead of overwriting it
+        provenance.write_json(path, result, replay=a.cached_only, ignore=("cost_charged_hqc",))
         rec.outputs.append(path)
 
 if __name__ == "__main__":
