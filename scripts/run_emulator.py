@@ -59,6 +59,9 @@ def main(argv=None) -> None:
     ap.add_argument("--eval-inputs", type=int, default=S.EMULATOR_EVAL_INPUTS,
                     help="test images used for the evaluation on the device (the same number from every class)")
     ap.add_argument("--programs-per-job", type=int, default=S.EMULATOR_PROGRAMS_PER_JOB, help="programs of one Nexus job")
+    ap.add_argument("--segments-schedule", nargs="*", default=[], metavar="CALL:SEGMENTS",
+                    help="change of the packing during a campaign: from the given execution step on (1-based; one step "
+                         "per round, then the evaluation), programs hold SEGMENTS circuits")
     ap.add_argument("--separate-runs", action="store_true",
                     help="never pack circuits of different runs into one program (runs can then be added later)")
     ap.add_argument("--timeout", type=float, default=12 * 3600.0, help="seconds to wait for one job")
@@ -69,16 +72,18 @@ def main(argv=None) -> None:
     os.makedirs(out_dir, exist_ok=True)
     runs = [(sc, seed) for sc in a.scenarios for seed in a.seeds]
 
+    schedule = tuple((int(x.split(":")[0]), int(x.split(":")[1])) for x in a.segments_schedule)
     device_factory, executor = None, LocalExecutor()
     if a.backend in ("aer", "nexus"):
         from qfedqgt.nexus import AerExecutor, DeviceProfile, NexusExecutor
 
         if a.backend == "aer":
-            executor = AerExecutor(segments=a.segments, seed=0)
+            executor = AerExecutor(segments=a.segments, seed=0, segments_schedule=schedule)
             device_factory = lambda scale, role, k: DeviceProfile("aer", scale, noisy=False)      # noqa: E731
         else:
             executor = NexusExecutor(a.project, os.path.join(out_dir, "cache"), segments=a.segments,
-                                     run_name=name, timeout=a.timeout, max_programs_per_job=a.programs_per_job)
+                                     run_name=name, timeout=a.timeout, max_programs_per_job=a.programs_per_job,
+                                     segments_schedule=schedule)
             device_factory = lambda scale, role, k: DeviceProfile(a.device, scale)               # noqa: E731
 
     # -- setup of every run
@@ -100,7 +105,8 @@ def main(argv=None) -> None:
                       shots_per_circuit={s: sorted(set(S.SCENARIOS[s].shots)) for s in a.scenarios},
                       error_rate_multipliers={s: sorted(set(S.SCENARIOS[s].gate_scales)) for s in a.scenarios},
                       learning_rates={s: {m: S.learning_rates(s)[m] for m in a.methods} for s in a.scenarios},
-                      segments=a.segments, programs_per_job=a.programs_per_job)
+                      segments=a.segments, programs_per_job=a.programs_per_job,
+                      segments_schedule=[f"{c}:{v}" for c, v in schedule])
     backend = {}
     if a.backend == "local":
         backend = dict(local_multipliers={s: sorted(set(S.SCENARIOS[s].local_scales or S.SCENARIOS[s].gate_scales))

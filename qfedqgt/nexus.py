@@ -134,8 +134,13 @@ def _shots_to_counts(shot_table: np.ndarray, n: int, segments: int, split: int) 
 class _ProgramExecutor:
     """Groups requests by (device, shots), packs them into programs, and parses the shots."""
 
-    def __init__(self, segments: int = 32):
+    def __init__(self, segments: int = 32, segments_schedule=()):
         self.segments = segments
+        # ((first call, segments), ...): from the given call of run() on (1-based), programs hold this many
+        # circuits.  The schedule lets a campaign change its packing between rounds without changing the
+        # programs of the rounds that are already in the cache.
+        self.segments_schedule = tuple(sorted(segments_schedule))
+        self.n_calls = 0
         self.n_circuits = 0
         self.n_shots = 0
         self.n_programs = 0
@@ -150,9 +155,18 @@ class _ProgramExecutor:
         """Shot tables of the programs of ``_submit``, in the same order."""
         raise NotImplementedError
 
+    def _segments_now(self) -> int:
+        seg = self.segments
+        for first, value in self.segments_schedule:
+            if self.n_calls >= first:
+                seg = value
+        return seg
+
     def run(self, requests: list) -> None:
         # requests with the same device, shot count and template share programs;
         # all programs of one device form one submission (one job on an emulator)
+        self.n_calls += 1
+        segments = self._segments_now()
         groups, devices = {}, {}
         for i, req in enumerate(requests):
             if req.shots % req.split:
@@ -171,7 +185,7 @@ class _ProgramExecutor:
                     by_group.setdefault(getattr(requests[i], "group", 0), []).append(i)
                 for members in by_group.values():        # programs never mix the groups (runs)
                     rows = np.concatenate([requests[i].A for i in members], axis=0)
-                    chunks = [rows[s:s + self.segments] for s in range(0, rows.shape[0], self.segments)]
+                    chunks = [rows[s:s + segments] for s in range(0, rows.shape[0], segments)]
                     layout.append((members, template, shots, len(specs), len(chunks)))
                     specs += [(template, ch, shots) for ch in chunks]
             circuits = sum(len(ch) for _, ch, _ in specs)
@@ -200,8 +214,8 @@ class _ProgramExecutor:
 class AerExecutor(_ProgramExecutor):
     """Runs the programs on the noiseless Aer simulator (offline check of the program path)."""
 
-    def __init__(self, segments: int = 32, seed: int = 0):
-        super().__init__(segments)
+    def __init__(self, segments: int = 32, seed: int = 0, segments_schedule=()):
+        super().__init__(segments, segments_schedule)
         from pytket.extensions.qiskit import AerBackend
 
         self.backend = AerBackend()
@@ -245,8 +259,9 @@ class NexusExecutor(_ProgramExecutor):
 
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
-                 io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90):
-        super().__init__(segments)
+                 io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90,
+                 segments_schedule=()):
+        super().__init__(segments, segments_schedule)
         self.io_threads = io_threads
         self.poll_interval = poll_interval          # seconds between two status requests of a job
         self.max_poll_failures = max_poll_failures  # consecutive failed status requests before giving up

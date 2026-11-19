@@ -214,3 +214,24 @@ def test_programs_of_a_group_do_not_depend_on_the_other_groups(tmp_path, monkeyp
     assert len(fake.started) == 2 and ex2.n_programs == 2          # only the new group was submitted
     assert fake.store[max(fake.store, key=lambda k: fake.started.index(fake.store[k].name))].n_shots == [2]
     assert first.counts.shape == (1, 3, t.dim) and second.counts.shape == (1, 4, t.dim)
+
+
+def test_segments_schedule_keeps_the_programs_of_earlier_calls(tmp_path, monkeypatch):
+    """A packing that changes at a later call leaves the cache keys of the earlier calls unchanged."""
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor
+
+    t = sim.layered_ansatz(2, 1)
+    rng = np.random.default_rng(0)
+    A = t.angles(rng.uniform(-1, 1, size=(8, t.n_data)), rng.uniform(-1, 1, size=t.n_params))
+    device = DeviceProfile("reimei-E", 300.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2)
+    ex.run([Request(device, t, A, 2)])                      # call 1: four programs of two circuits
+    assert ex.n_programs == 4 and len(fake.started) == 1
+    ex2 = NexusExecutor("test", cache, segments=2, segments_schedule=((2, 8),))
+    ex2.run([Request(device, t, A, 2)])                     # call 1 again: the same four programs, all cached
+    assert len(fake.started) == 1
+    ex2.run([Request(device, t, A + 0.1, 2)])               # call 2: one program of eight circuits
+    assert len(fake.started) == 2 and ex2.n_programs == 5
