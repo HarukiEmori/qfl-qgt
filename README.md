@@ -103,16 +103,20 @@ python scripts/run_federated.py --scenario shots_and_noise --backend nexus --dev
 
 The emulator experiments of the paper were run on 2026-11-19 through Quantinuum Nexus.  Their shot tables,
 job logs and run records are in `results/`, so that every command below reproduces its result from the cache
-without a login and without submitting a job.  To repeat a measurement on the emulator, remove its cache
-folder and log in with `qnx login`.
+without a login.  With `--cached-only` a script never submits a job and stops if a result is missing.  To
+repeat a measurement on the emulator, remove its cache folder, log in with `qnx login`, and run the command
+without `--cached-only`.
 
 ```bash
-python scripts/nexus_geometry.py --device reimei-E --shots 100                          # echo circuits, two-layer circuit
-python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 100 200 300 400 500
-python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1
-python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --programs-per-job 1 --segments-schedule 5:816
+python scripts/nexus_geometry.py --device reimei-E --shots 100 --cached-only            # echo circuits, two-layer circuit
+python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 100 200 300 400 500 --cached-only
+python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1 --cached-only
+python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --cached-only
 python scripts/make_figures.py emulator
 ```
+
+The packing of the circuits of the training into programs changed after the fourth round (528 circuits per
+program, then 816).  It is stored in `results/emulator-reimei-E/packing.json` and is reused by the command above.
 
 The same steps are in `notebooks/reimei_E_experiments.ipynb`.
 
