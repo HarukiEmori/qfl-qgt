@@ -253,6 +253,8 @@ class NexusExecutor(_ProgramExecutor):
 
     The connection to Nexus is opened only when something has to be submitted, so that a
     run whose results are all in the cache needs neither a login nor a network connection.
+    With ``cached_only=True`` the executor never submits; it raises an error if a result is
+    missing, which protects a reproduction from the cache against accidental jobs.
     ``job_records`` lists the jobs behind the results of this session, including the jobs
     whose results were read from the cache (see :mod:`qfedqgt.provenance`).
     """
@@ -260,8 +262,9 @@ class NexusExecutor(_ProgramExecutor):
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
                  io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90,
-                 segments_schedule=()):
+                 segments_schedule=(), cached_only: bool = False):
         super().__init__(segments, segments_schedule)
+        self.cached_only = cached_only              # never submit: fail if a result is not in the cache
         self.io_threads = io_threads
         self.poll_interval = poll_interval          # seconds between two status requests of a job
         self.max_poll_failures = max_poll_failures  # consecutive failed status requests before giving up
@@ -421,6 +424,9 @@ class NexusExecutor(_ProgramExecutor):
         todo = [j for j, k in enumerate(keys) if not os.path.exists(os.path.join(self.cache_dir, k + ".npz"))]
         self._note_jobs([k for j, k in enumerate(keys) if j not in set(todo)], "cache")
         jobs = []
+        if todo and self.cached_only:
+            raise RuntimeError(f"{len(todo)} of {len(keys)} programs for {device.tag} are not in the cache "
+                               f"({self.cache_dir}); nothing was submitted because cached_only is set")
         qnx = self._connect() if todo else None
         if todo and self._program is None:
             self._program = provenance.program_info()

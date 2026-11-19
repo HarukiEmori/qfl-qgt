@@ -65,6 +65,7 @@ def main(argv=None) -> None:
     ap.add_argument("--separate-runs", action="store_true",
                     help="never pack circuits of different runs into one program (runs can then be added later)")
     ap.add_argument("--timeout", type=float, default=12 * 3600.0, help="seconds to wait for one job")
+    ap.add_argument("--cached-only", action="store_true", help="never submit a job; fail if a result is not in the cache")
     a = ap.parse_args(argv)
 
     name = a.name or ("emulator-" + (a.device if a.backend == "nexus" else a.backend))
@@ -72,6 +73,16 @@ def main(argv=None) -> None:
     os.makedirs(out_dir, exist_ok=True)
     runs = [(sc, seed) for sc in a.scenarios for seed in a.seeds]
 
+    # the packing of a campaign is stored with its results, so that the same command without the packing
+    # options reproduces the campaign from the cache
+    packing_file = os.path.join(out_dir, "packing.json")
+    if os.path.exists(packing_file) and not a.segments_schedule and a.segments == S.EMULATOR_SEGMENTS:
+        with open(packing_file) as f:
+            stored = json.load(f)
+        a.segments, a.segments_schedule = stored["segments"], stored["segments_schedule"]
+    elif a.backend == "nexus":
+        with open(packing_file, "w") as f:
+            json.dump(dict(segments=a.segments, segments_schedule=list(a.segments_schedule)), f, indent=1)
     schedule = tuple((int(x.split(":")[0]), int(x.split(":")[1])) for x in a.segments_schedule)
     device_factory, executor = None, LocalExecutor()
     if a.backend in ("aer", "nexus"):
@@ -83,7 +94,7 @@ def main(argv=None) -> None:
         else:
             executor = NexusExecutor(a.project, os.path.join(out_dir, "cache"), segments=a.segments,
                                      run_name=name, timeout=a.timeout, max_programs_per_job=a.programs_per_job,
-                                     segments_schedule=schedule)
+                                     segments_schedule=schedule, cached_only=a.cached_only)
             device_factory = lambda scale, role, k: DeviceProfile(a.device, scale)               # noqa: E731
 
     # -- setup of every run

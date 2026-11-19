@@ -235,3 +235,21 @@ def test_segments_schedule_keeps_the_programs_of_earlier_calls(tmp_path, monkeyp
     assert len(fake.started) == 1
     ex2.run([Request(device, t, A + 0.1, 2)])               # call 2: one program of eight circuits
     assert len(fake.started) == 2 and ex2.n_programs == 5
+
+
+def test_cached_only_never_submits(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor
+
+    device = DeviceProfile("reimei-E", 300.0)
+    cache = str(tmp_path / "cache")
+    t, reqs = _requests(device)
+    with pytest.raises(RuntimeError, match="not in the cache"):
+        NexusExecutor("test", cache, segments=2, cached_only=True).run(reqs)
+    assert fake.started == []
+    NexusExecutor("test", cache, segments=2).run(reqs)               # fills the cache
+    _, again = _requests(device)
+    ex = NexusExecutor("test", cache, segments=2, cached_only=True)
+    ex.run(again)                                                     # now served from the cache
+    assert len(fake.started) == 1 and ex.qnx is None and np.array_equal(again[0].counts, reqs[0].counts)

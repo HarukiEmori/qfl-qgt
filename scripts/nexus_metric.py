@@ -62,6 +62,7 @@ def main(argv=None) -> None:
     ap.add_argument("--project", default="QFedQGT")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--timeout", type=float, default=4 * 3600.0)
+    ap.add_argument("--cached-only", action="store_true", help="never submit a job; fail if a result is not in the cache")
     a = ap.parse_args(argv)
 
     sc = SCENARIOS["shots_and_noise"]
@@ -84,7 +85,7 @@ def main(argv=None) -> None:
         from qfedqgt.nexus import DeviceProfile, NexusExecutor
 
         ex = NexusExecutor(a.project, os.path.join(out_dir, f"cache-{a.device}"), segments=a.segments,
-                           run_name=f"metric-{a.device}", timeout=a.timeout)
+                           run_name=f"metric-{a.device}", timeout=a.timeout, cached_only=a.cached_only)
         devices = [DeviceProfile(a.device, s) for s in a.scales]
     else:
         ex = LocalExecutor()

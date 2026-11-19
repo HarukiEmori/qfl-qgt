@@ -57,6 +57,7 @@ def main(argv=None) -> None:
     ap.add_argument("--project", default="QFedQGT")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--timeout", type=float, default=7200.0)
+    ap.add_argument("--cached-only", action="store_true", help="never submit a job; fail if a result is not in the cache")
     a = ap.parse_args(argv)
 
     sc = SCENARIOS[a.scenario]
@@ -71,7 +72,7 @@ def main(argv=None) -> None:
     A = e.angles(X, theta)
     out_dir = os.path.join(ROOT, "results", "nexus-geometry")
     ex = NexusExecutor(a.project, os.path.join(out_dir, f"cache-{a.device}"), segments=a.inputs,
-                       run_name=f"geometry-{a.device}", timeout=a.timeout)
+                       run_name=f"geometry-{a.device}", timeout=a.timeout, cached_only=a.cached_only)
     reqs = [Request(DeviceProfile(a.device, s), e, A, a.shots, tag=f"echo-x{s:g}") for s in a.scales]
     t0 = time.time()
     with provenance.record_run("noise strength from echo circuits", entry="scripts/nexus_geometry.py", executor=ex,
