@@ -3,7 +3,8 @@
 
 The script trains the classifier of a scenario without device noise and without shot
 noise on 200 training images (gradient descent with momentum) and reports the test
-accuracy.  It gives the reference value quoted for the four-class task in the paper.
+accuracy.  It gives the reference values quoted for the four-class tasks in the paper
+(the three-layer circuit of the simulations and the one-layer circuit of the emulator experiment).
 
     python scripts/capacity_check.py            # writes results/capacity.json
 """
@@ -45,7 +46,7 @@ def capacity(name: str, seed: int = 0, n_train: int = 200, steps: int = 150, lr:
 
 
 if __name__ == "__main__":
-    out = [capacity(name, seed) for name in ("shots_and_noise", "shots_and_noise_4c") for seed in (0, 1, 2)]
+    out = [capacity(name, seed) for name in ("shots_and_noise", "shots_and_noise_4c", "emulator_iid") for seed in (0, 1, 2)]
     for r in out:
         print(f"{r['scenario']:20s} seed {r['seed']}  d={r['n_params']}  train {r['train_accuracy']:.3f}  test {r['test_accuracy']:.3f}")
     os.makedirs(os.path.join(ROOT, "results"), exist_ok=True)
