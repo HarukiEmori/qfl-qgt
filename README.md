@@ -9,8 +9,9 @@ Code and data for the paper
 The repository implements QFedQGT, a quantum federated learning scheme in which every client
 preconditions its gradient with the Bures metric of the mixed states that its own noisy device
 prepares, and the server weights the client updates by their precision.  It contains the simulators,
-the federated protocol, the interface to the Quantinuum emulator `reimei-E`, the numerical checks
-of the statements of the paper, and the scripts that produce its figures and tables.
+the federated protocol, the interface to the Quantinuum emulator `reimei-E`, the records of the runs on
+that emulator, the numerical checks of the statements of the paper, and the scripts that produce its
+figures and tables.
 
 ## Layout
 
@@ -19,15 +20,23 @@ of the statements of the paper, and the scripts that produce its figures and tab
 | `qfedqgt/sim.py` | Circuit templates, state-vector and density-matrix simulators, gate-level noise model, parameter-shift circuits |
 | `qfedqgt/geometry.py` | Mixed-state quantum geometric tensor: Bures metric, mean Uhlmann curvature, incompatibility ratio, closed forms for global depolarizing noise |
 | `qfedqgt/model.py` | Variational classifier with Pauli-Z readout and its estimators from measurement counts (gradient, purity) |
-| `qfedqgt/federated.py` | Client update, aggregation rules (QFedAvg, QFedFisher, QFedQGT, ablations), federated loop |
-| `qfedqgt/nexus.py` | Native-gate programs (`PhasedX`, `Rz`, `ZZPhase`), packing of circuits by qubit reuse, execution through Quantinuum Nexus or a local Aer simulator |
-| `qfedqgt/scenarios.py` | Scenarios, run configuration, and learning rates of the paper |
+| `qfedqgt/federated.py` | Client update, aggregation rules (QFedAvg, QFedFisher, QFedQGT, ablations), federated loop, lockstep execution of several runs |
+| `qfedqgt/nexus.py` | Native-gate programs (`PhasedX`, `Rz`, `ZZPhase`), packing of circuits by qubit reuse, execution through Quantinuum Nexus or a local Aer simulator, cache and re-attachment of jobs |
+| `qfedqgt/metric.py` | Two-copy measurement of the Bures metric (destructive SWAP test, parameter-shift overlaps) |
+| `qfedqgt/provenance.py` | Run records: which program, when, and on which device (shown automatically and saved next to the results) |
+| `qfedqgt/scenarios.py` | Scenarios, run configuration, and learning rates of the paper (simulations and emulator experiment) |
 | `scripts/verify_theory.py` | Numerical verification of the propositions (prints PASS/FAIL) |
 | `scripts/geometry_evaluation.py` | Direct evaluation of the Bures metric and the mean Uhlmann curvature of the client states |
 | `scripts/run_campaign.py` | Simulation campaign: step-size selection on tuning seeds and the reported runs |
 | `scripts/run_federated.py` | One federated run on a chosen backend (`local`, `aer`, `nexus`) |
+| `scripts/run_emulator.py` | Federated training on the emulator: several scenarios and seeds in lockstep, final evaluation on the device |
+| `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
+| `scripts/nexus_metric.py` | Two-copy measurement of a block of the Bures metric on the emulator |
+| `scripts/nexus_smoke.py` | Smallest job on a Quantinuum backend (run before a campaign) |
+| `scripts/capacity_check.py` | Accuracy of the noiseless circuits trained with exact gradients |
 | `scripts/download_mnist.py` | Downloads the MNIST archive to `data/` |
 | `scripts/make_figures.py` | Figures and table rows from `results/` |
+| `notebooks/reimei_E_experiments.ipynb` | The emulator experiments as a notebook; every cell that runs circuits shows its run record |
 | `tests/` | Unit tests (`pytest`) |
 | `results/` | Results of the runs reported in the paper |
 | `legacy/` | Prototype notebook of 2026-03 and its requirements (superseded; kept for the record) |
