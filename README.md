@@ -76,7 +76,7 @@ python scripts/run_campaign.py tune          # step-size grid on the tuning seed
 python scripts/run_campaign.py select        # writes results/tuning/learning_rates.json
 python scripts/run_campaign.py main          # reported runs (16 seeds per scenario and method)
 python scripts/run_campaign.py sens --scenarios shots_and_noise noise_only_x500   # every step size on the reported seeds
-python scripts/make_figures.py all           # figures/geometry.pdf, training.pdf, sweep.pdf
+python scripts/make_figures.py all           # figures/geometry.pdf, training.pdf, sweep.pdf, emulator.pdf
 ```
 
 The scenarios are defined in `qfedqgt/scenarios.py`.
@@ -99,22 +99,59 @@ python scripts/run_federated.py --scenario shots_and_noise --backend local --see
 python scripts/run_federated.py --scenario shots_and_noise --backend nexus --device reimei-E --seeds 0
 ```
 
-The same command with `--device reimei` submits the experiment to the processor.  Finished jobs are cached
-under `results/<name>/nexus-cache-seed<seed>/`, and an interrupted run resumes without resubmitting them.
-The Nexus interface has been checked offline against a noiseless Aer simulation (`tests/test_programs.py`)
-and was run on the syntax checker `reimei-SC` and on the emulator `reimei-E` on 2026-11-19:
+## Experiments on the emulator `reimei-E`
+
+The emulator experiments of the paper were run on 2026-11-19 through Quantinuum Nexus.  Their shot tables,
+job logs and run records are in `results/`, so that every command below reproduces its result from the cache
+without a login and without submitting a job.  To repeat a measurement on the emulator, remove its cache
+folder and log in with `qnx login`.
 
 ```bash
-python scripts/nexus_smoke.py --device reimei-SC                       # smallest job, no cost
-python scripts/nexus_geometry.py --device reimei-E --shots 100         # echo circuits for six error-rate multipliers
+python scripts/nexus_geometry.py --device reimei-E --shots 100                          # echo circuits, two-layer circuit
+python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 100 200 300 400 500
+python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1
+python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --programs-per-job 1 --segments-schedule 5:816
+python scripts/make_figures.py emulator
 ```
 
-`results/nexus-geometry/reimei-E.json` holds the echo measurements of the paper (noise strength inferred on the
-emulator against the gate-level noise model).  A complete federated run on the emulator has not been made.  At the
-throughput measured on that day (a queue wait of five to ten minutes per batch of jobs and 30 to 45 circuit shots
-per second and job) one round of the first scenario with three methods takes about half an hour.
-A classical register may hold at most 64 bits on these backends, and the packed programs therefore spread their
-bits over several registers.
+The same steps are in `notebooks/reimei_E_experiments.ipynb`.
+
+| Result | Content |
+| :-- | :-- |
+| `results/nexus-geometry/reimei-E.json`, `reimei-E-emulator_iid.json` | Frequency of the all-zero outcome of echo circuits for several error-rate multipliers, the inferred noise strength, and the multiplier at which the local gate-level model has the same frequency |
+| `results/metric/reimei-E.json` | Two-copy measurement of the 8 x 8 block of the Bures metric of one layer (137 circuits on 8 qubits, 200 shots) |
+| `results/emulator-reimei-E/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, six seeds each |
+| `results/emulator-local/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds, 16 reported seeds, and every step size of the grids |
+
+**Run records.**  Every script that executes circuits ends by showing a run record and saves it next to its
+results (`provenance.json`): which program produced the result (repository, commit, state of the working tree,
+entry point), when (start and end, submission and completion of every job), and on which device (device name,
+error-rate multipliers, job identifiers, shots, cost).  In a notebook the record is displayed as a table when
+the cell finishes.  The commit is logged when a job is submitted, and results read from the cache keep the
+record of the jobs that produced them.
+
+```python
+from qfedqgt.provenance import record_run
+with record_run("my experiment", executor=executor, save_to="results/my-experiment"):
+    executor.run(requests)
+```
+
+**What limits an experiment on the emulator.**  Measured on 2026-11-19:
+
+- A job waits between 3 and 20 minutes before it starts.  This wait occurs in every round of a training.
+- The run time is set by the number of distinct circuits rather than by the shots.  A program of 528 four-qubit
+  circuits took 13 s with one shot and about 3 minutes with 30 shots when it was the only program of its job.
+  Jobs with several programs were much slower (2 to 4 minutes per program), so every program is submitted as
+  its own job.
+- Programs of 528, 816 and 1224 circuits were accepted; a program of 2112 circuits was not accepted within
+  20 minutes.  A classical register may hold at most 64 bits, and the packed programs spread their bits over
+  several registers.
+- The default waiting of the client (`qnx.jobs.wait_for`) polls with intervals of up to 20 minutes; the
+  executor asks for the job status every 20 s instead.
+
+One round of the emulator experiment (12 runs, 5088 circuits) therefore took about 20 to 30 minutes, and the
+experiment is much smaller than the simulations.  Interrupted campaigns resume from the cache and re-attach to
+the jobs that are still running (`qfedqgt/nexus.py`).
 
 ## Results
 
