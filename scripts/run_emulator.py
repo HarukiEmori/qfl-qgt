@@ -146,7 +146,8 @@ def main(argv=None) -> None:
                 for m in a.methods:
                     thetas = results[i][m]["theta"]
                     for r in range(max(1, len(thetas) - tail), len(thetas)):
-                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test, thetas[r]), s["cfg"].eval_shots, tag="eval")
+                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test, thetas[r]), s["cfg"].eval_shots,
+                                      tag="eval", group=i)
                         evals[(i, m, r)] = req
                         reqs.append(req)
             executor.run(reqs)

@@ -193,3 +193,25 @@ def test_requests_of_one_device_form_one_job_with_their_own_shots(tmp_path, monk
     assert shots == [[1, 5], [5, 10, 10]]                           # every program keeps its own shot count
     assert [r.counts.shape for r in reqs] == [(1, 3, t.dim), (1, 2, t.dim), (1, 1, t.dim), (1, 2, t.dim)]
     assert reqs[0].counts[0, :, 0].tolist() == [10, 10, 10] and reqs[3].counts[0, :, 0].tolist() == [5, 5]
+
+
+def test_programs_of_a_group_do_not_depend_on_the_other_groups(tmp_path, monkeypatch):
+    """Adding a second run to a job leaves the cache keys of the first run unchanged."""
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor
+
+    t = sim.layered_ansatz(2, 1)
+    rng = np.random.default_rng(0)
+    A = t.angles(rng.uniform(-1, 1, size=(7, t.n_data)), rng.uniform(-1, 1, size=t.n_params))
+    device = DeviceProfile("reimei-E", 300.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=4)
+    ex.run([Request(device, t, A[:3], 2, group=0)])
+    assert len(fake.started) == 1
+    ex2 = NexusExecutor("test", cache, segments=4)
+    first, second = Request(device, t, A[:3], 2, group=0), Request(device, t, A[3:], 2, group=1)
+    ex2.run([first, second])
+    assert len(fake.started) == 2 and ex2.n_programs == 2          # only the new group was submitted
+    assert fake.store[max(fake.store, key=lambda k: fake.started.index(fake.store[k].name))].n_shots == [2]
+    assert first.counts.shape == (1, 3, t.dim) and second.counts.shape == (1, 4, t.dim)

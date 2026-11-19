@@ -20,7 +20,7 @@ SWEEP_SCALES = (1, 50, 150, 300, 500)
 
 # emulator experiment (see below): multiplier on the emulator, matched multiplier of the local model,
 # and shots per circuit of the reference clients
-EMU_SCALE, EMU_LOCAL_SCALE, EMU_SHOTS_REFERENCE = 400.0, 560.0, 10
+EMU_SCALE, EMU_LOCAL_SCALE, EMU_SHOTS_REFERENCE = 300.0, 370.0, 10
 
 
 def _noise_only(scale: float) -> Scenario:

@@ -8,7 +8,9 @@ Backends
 ``nexus``   Quantinuum emulator or device through Quantinuum Nexus (requires ``qnx login``)
 
 The protocol is identical on every backend.  Results are written to
-``results/<name>/seed<seed>.npz`` together with a JSON summary of the configuration.
+``results/<name>/seed<seed>.npz`` together with a JSON summary of the configuration and the run
+record ``seed<seed>-provenance.json`` (which program, when, on which device; shown when a run ends).
+For several runs in lockstep on the emulator, use ``scripts/run_emulator.py``.
 
 Examples
 --------
@@ -28,14 +30,15 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from qfedqgt import provenance                                           # noqa: E402
 from qfedqgt.experiment import build, make_methods                       # noqa: E402
 from qfedqgt.federated import LocalExecutor, RunConfig, run_federated     # noqa: E402
-from qfedqgt.scenarios import SCENARIOS, RUN, learning_rates             # noqa: E402
+from qfedqgt.scenarios import SCENARIOS, learning_rates, run_config      # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def main() -> None:
+def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scenario", default="shots_and_noise", choices=sorted(SCENARIOS))
     ap.add_argument("--backend", default="local", choices=["local", "aer", "nexus"])
@@ -47,10 +50,10 @@ def main() -> None:
     ap.add_argument("--device", default="reimei-E", help="Nexus device name")
     ap.add_argument("--project", default="QFedQGT", help="Nexus project name")
     ap.add_argument("--segments", type=int, default=132, help="circuits packed into one program")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     sc = SCENARIOS[args.scenario]
-    cfg = RUN
+    cfg = run_config(args.scenario)
     if args.rounds is not None:
         cfg = replace(cfg, rounds=args.rounds)
     if args.eval_every is not None:
@@ -87,8 +90,12 @@ def main() -> None:
             print(f"  seed {seed} round {r:3d}  " + "  ".join(f"{m}={a:.3f}" for m, a in acc.items())
                   + f"  ({time.time() - t0:.0f}s)", flush=True)
 
-        out = run_federated(model, clients, make_methods(lrs), replace(cfg, seed=seed), theta0,
-                            ds.X_test, ds.y_test, executor, eval_device, on_round=on_round)
+        with provenance.record_run("federated training", entry="scripts/run_federated.py", executor=executor,
+                                   parameters=dict(scenario=args.scenario, seed=seed, methods=args.methods,
+                                                   rounds=cfg.rounds, learning_rates=lrs),
+                                   save_to=os.path.join(out_dir, f"seed{seed}-provenance.json")):
+            out = run_federated(model, clients, make_methods(lrs), replace(cfg, seed=seed), theta0,
+                                ds.X_test, ds.y_test, executor, eval_device, on_round=on_round)
         usage = out.pop("_usage")
         flat = {}
         for m, h in out.items():

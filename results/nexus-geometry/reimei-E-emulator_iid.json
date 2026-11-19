@@ -1,0 +1,80 @@
+{
+ "device": "reimei-E",
+ "scenario": "emulator_iid",
+ "layers": 1,
+ "shots": 100,
+ "inputs": 8,
+ "seed": 0,
+ "cost_charged_hqc": 141.35999999999999,
+ "cost_formula_hqc": 149.04,
+ "jobs_submitted_from": "2026-11-19T01:42:23-0800",
+ "jobs_completed_by": "2026-11-19T01:46:38-0800",
+ "rows": [
+  {
+   "scale": 1.0,
+   "samples": 800,
+   "survival": 0.985,
+   "survival_se": 0.0042975283594177726,
+   "survival_local": 0.990845868381397,
+   "p_hat": 0.008032258589020458,
+   "p_hat_local": 0.004894180028999662,
+   "kappa": 0.9909647243034272,
+   "kappa_local": 0.9944944233426225
+  },
+  {
+   "scale": 100.0,
+   "samples": 800,
+   "survival": 0.47125,
+   "survival_se": 0.017648421937244137,
+   "survival_local": 0.5333305959267998,
+   "p_hat": 0.33969703923123284,
+   "p_hat_local": 0.2913256725957122,
+   "kappa": 0.6204064569893056,
+   "kappa_local": 0.6740384084256128
+  },
+  {
+   "scale": 200.0,
+   "samples": 800,
+   "survival": 0.23625,
+   "survival_se": 0.015018153078025273,
+   "survival_local": 0.29034350506166584,
+   "p_hat": 0.569496418907655,
+   "p_hat_local": 0.5070161543561728,
+   "kappa": 0.36941756726989167,
+   "kappa_local": 0.4368263251095272
+  },
+  {
+   "scale": 300.0,
+   "samples": 800,
+   "survival": 0.12375,
+   "survival_se": 0.011642376126676204,
+   "survival_local": 0.1685112671944648,
+   "p_hat": 0.7443961398309225,
+   "p_hat_local": 0.6637282571975024,
+   "kappa": 0.1873876391907624,
+   "kappa_local": 0.26972446607495204
+  },
+  {
+   "scale": 400.0,
+   "samples": 800,
+   "survival": 0.0725,
+   "survival_se": 0.00916813435220056,
+   "survival_local": 0.10977942784452574,
+   "p_hat": 0.8967204441011356,
+   "p_hat_local": 0.7754306572552089,
+   "kappa": 0.04952725965728691,
+   "kappa_local": 0.15686368893462113
+  },
+  {
+   "scale": 500.0,
+   "samples": 800,
+   "survival": 0.045,
+   "survival_se": 0.007329307607134524,
+   "survival_local": 0.08227202085950619,
+   "p_hat": 1.0,
+   "p_hat_local": 0.8547754993691723,
+   "kappa": 7.944389275074493e-06,
+   "kappa_local": 0.08366737519514102
+  }
+ ]
+}

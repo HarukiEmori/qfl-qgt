@@ -151,11 +151,14 @@ class _ProgramExecutor:
             specs, layout = [], []
             for key in keys:
                 _, shots, template = key
-                members = groups[key]
-                rows = np.concatenate([requests[i].A for i in members], axis=0)
-                chunks = [rows[s:s + self.segments] for s in range(0, rows.shape[0], self.segments)]
-                layout.append((members, template, shots, len(specs), len(chunks)))
-                specs += [(template, ch, shots) for ch in chunks]
+                by_group = {}
+                for i in groups[key]:
+                    by_group.setdefault(getattr(requests[i], "group", 0), []).append(i)
+                for members in by_group.values():        # programs never mix the groups (runs)
+                    rows = np.concatenate([requests[i].A for i in members], axis=0)
+                    chunks = [rows[s:s + self.segments] for s in range(0, rows.shape[0], self.segments)]
+                    layout.append((members, template, shots, len(specs), len(chunks)))
+                    specs += [(template, ch, shots) for ch in chunks]
             circuits = sum(len(ch) for _, ch, _ in specs)
             label = f"{getattr(device, 'tag', 'local')}-p{len(specs)}-c{circuits}"
             handles.append((layout, specs, self._submit(device, specs, label)))

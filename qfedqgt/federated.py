@@ -27,6 +27,9 @@ class Request:
 
     ``counts`` is filled by the executor with an array of shape (split, C, D): the
     outcome counts of ``split`` disjoint groups of ``shots / split`` shots.
+    Circuits of requests with different ``group`` values are never packed into the same
+    program, so that the programs of one federated run do not depend on the other runs
+    that are executed with it.
     """
     device: object
     template: sim.Template
@@ -35,6 +38,7 @@ class Request:
     split: int = 1
     tag: str = ""
     counts: np.ndarray | None = None
+    group: int = 0
 
     @property
     def n_circuits(self) -> int:
@@ -119,6 +123,8 @@ class _SharedView:
     def run(self, requests: list) -> None:
         import threading
 
+        for req in requests:
+            req.group = self.index
         self.shared._pending[self.index] = list(requests)
         try:
             self.shared._barrier.wait()
