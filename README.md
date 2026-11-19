@@ -149,17 +149,17 @@ with record_run("my experiment", executor=executor, save_to="results/my-experime
 **What limits an experiment on the emulator.**  Measured on 2026-11-19:
 
 - A job waits between 3 and 30 minutes before it starts.  This wait occurs in every round of a training.
-- The run time is set by the number of distinct circuits rather than by the shots.  A program of 528 four-qubit
-  circuits took 13 s with one shot and about 3 minutes with 30 shots when it was the only program of its job.
-  Jobs with several programs were much slower (2 to 4 minutes per program), so every program is submitted as
-  its own job.
+- The run time of a job with a single program grows with the number of circuits times the number of shots:
+  about 6 s plus 0.011 s per circuit and shot for four-qubit one-layer circuits (528 circuits took 13 s with one
+  shot and about 3 minutes with 30 shots).  Jobs with several programs were much slower (2 to 4 minutes per
+  program), so every program is submitted as its own job.
 - Programs of 528, 816 and 1224 circuits were accepted; a program of 2112 circuits was not accepted within
   20 minutes.  A classical register may hold at most 64 bits, and the packed programs spread their bits over
   several registers.
 - The default waiting of the client (`qnx.jobs.wait_for`) polls with intervals of up to 20 minutes; the
   executor asks for the job status every 20 s instead.
 
-One round of the emulator experiment (12 runs, 5088 circuits) therefore took about 20 to 30 minutes, and the
+One round of the emulator experiment (12 runs, 4992 circuits) therefore took about 20 to 30 minutes, and the
 experiment is much smaller than the simulations.  Interrupted campaigns resume from the cache and re-attach to
 the jobs that are still running (`qfedqgt/nexus.py`).
 
