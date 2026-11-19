@@ -245,9 +245,11 @@ class NexusExecutor(_ProgramExecutor):
 
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
-                 io_threads: int = 4):
+                 io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90):
         super().__init__(segments)
         self.io_threads = io_threads
+        self.poll_interval = poll_interval          # seconds between two status requests of a job
+        self.max_poll_failures = max_poll_failures  # consecutive failed status requests before giving up
         self.project_name = project
         self.qnx = None
         self.project = None
@@ -282,6 +284,31 @@ class NexusExecutor(_ProgramExecutor):
 
         with ThreadPoolExecutor(max_workers=self.io_threads) as pool:
             return list(pool.map(fn, items))
+
+    def _wait(self, job, name: str) -> None:
+        """Wait until a job is completed, by asking for its status at a fixed interval.
+
+        The default waiting of the client keeps a websocket open and then polls with intervals of
+        up to twenty minutes; a dropped connection or a slow poll would stall a campaign of many
+        short jobs.  Failed status requests (network, token refresh) are retried.
+        """
+        t0, failures = time.time(), 0
+        while True:
+            try:
+                state = str(self.qnx.jobs.status(job).status).split(".")[-1]
+                failures = 0
+            except Exception as exc:
+                failures += 1
+                if failures >= self.max_poll_failures:
+                    raise RuntimeError(f"status of job {name} unavailable after {failures} requests: {exc!r}") from exc
+                state = "UNKNOWN"
+            if state == "COMPLETED":
+                return
+            if state in ("ERROR", "CANCELLED", "CANCELLING", "TERMINATED", "DEPLETED"):
+                raise RuntimeError(f"job {name} ended with status {state}")
+            if self.timeout is not None and time.time() - t0 > self.timeout:
+                raise TimeoutError(f"job {name} not completed after {self.timeout:.0f} s (status {state})")
+            time.sleep(self.poll_interval)
 
     def describe(self) -> dict:
         return dict(kind="Quantinuum Nexus", project=self.project_name,
@@ -426,7 +453,7 @@ class NexusExecutor(_ProgramExecutor):
         specs = handle["specs"]
         for item in handle["jobs"]:
             try:
-                qnx.jobs.wait_for(item["job"], timeout=self.timeout)
+                self._wait(item["job"], item["name"])
             except Exception as exc:
                 # an errored job is recorded so that a later run submits its programs again
                 # instead of re-attaching to it

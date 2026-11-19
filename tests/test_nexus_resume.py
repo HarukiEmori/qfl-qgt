@@ -50,10 +50,9 @@ class FakeQnx(types.ModuleType):
 
         class jobs:
             @staticmethod
-            def wait_for(job, timeout=None):
-                if str(job.id) in fake.broken:
-                    raise RuntimeError("job errored")
-                return None
+            def status(job):
+                state = "ERROR" if str(job.id) in fake.broken else "COMPLETED"
+                return types.SimpleNamespace(status=f"JobStatusEnum.{state}")
 
             @staticmethod
             def results(job):
