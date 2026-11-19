@@ -116,7 +116,11 @@ def select(scenarios) -> None:
     if os.path.exists(path):
         with open(path) as f:
             table = json.load(f)
+    report_path = os.path.join(ROOT, "results", "tuning", "tuning_report.json")
     report = {}
+    if os.path.exists(report_path):          # keep the entries of the scenarios that are not selected again
+        with open(report_path) as f:
+            report = json.load(f)
     for sc in scenarios:
         d = os.path.join(ROOT, "results", "tuning", sc)
         table[sc], report[sc] = {}, {}
@@ -138,7 +142,7 @@ def select(scenarios) -> None:
             print(f"{sc:18s} {m:15s} lr={best[0]:<5g} " + "  ".join(f"{r[0]:g}:{r[1]:.3f}/{r[2]:.3f}" for r in rows) + note)
     with open(path, "w") as f:
         json.dump(table, f, indent=1, sort_keys=True)
-    with open(os.path.join(ROOT, "results", "tuning", "tuning_report.json"), "w") as f:
+    with open(report_path, "w") as f:
         json.dump(report, f, indent=1, sort_keys=True)
     print(f"wrote {path}")
 
