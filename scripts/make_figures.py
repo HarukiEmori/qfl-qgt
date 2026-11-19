@@ -4,7 +4,7 @@
     python scripts/make_figures.py geometry            # direct evaluation of the geometry
     python scripts/make_figures.py training            # accuracy and loss against the round
     python scripts/make_figures.py sweep               # final accuracy against the noise of the clients
-    python scripts/make_figures.py emulator [dir]      # training on the emulator (default: emulator-reimei-E)
+    python scripts/make_figures.py emulator [dir ...]  # training on the emulator (default: every finished campaign)
     python scripts/make_figures.py table <dir> ...     # LaTeX rows of a results table
     python scripts/make_figures.py all
 
@@ -22,6 +22,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt   # noqa: E402
+import matplotlib.ticker           # noqa: E402
 import numpy as np                # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -153,20 +154,35 @@ def sweep(scales=SWEEP, out="sweep.pdf", methods=("QFedAvg", "QFedFisher", "QFed
 EMULATOR_PANELS = (("emulator_iid", "(a) IID data"), ("emulator_dirichlet", "(b) Dirichlet partition"))
 
 
-def load_runs(directory: str, scenario: str) -> dict:
-    """{method: {key: array (seeds, ...)}} from the run files ``<scenario>-seed<k>.npz`` of scripts/run_emulator.py."""
-    path = directory if os.path.isdir(directory) else os.path.join(ROOT, "results", directory)
+def campaign_dirs() -> list:
+    """Finished campaigns of the emulator experiment (folders of ``results/`` with a summary)."""
+    from qfedqgt.scenarios import EMULATOR_CAMPAIGNS
+    return [d for d in EMULATOR_CAMPAIGNS if os.path.exists(os.path.join(ROOT, "results", d, "summary.json"))]
+
+
+def load_runs(directories, scenario: str) -> dict:
+    """{method: {key: array (seeds, ...)}} from the run files ``<scenario>-seed<k>.npz`` of scripts/run_emulator.py.
+
+    ``directories`` is one results folder or a list of them (the campaigns of an experiment).
+    """
+    if isinstance(directories, str):
+        directories = [directories]
     out = {}
-    for f in sorted(glob.glob(os.path.join(path, f"{scenario}-seed*.npz"))):
-        z = np.load(f)
-        for key in z.files:
-            m, k = key.split("/")
-            out.setdefault(m, {}).setdefault(k, []).append(z[key])
+    for directory in directories:
+        path = directory if os.path.isdir(directory) else os.path.join(ROOT, "results", directory)
+        for f in sorted(glob.glob(os.path.join(path, f"{scenario}-seed*.npz"))):
+            z = np.load(f)
+            for key in z.files:
+                m, k = key.split("/")
+                out.setdefault(m, {}).setdefault(k, []).append(z[key])
     return {m: {k: np.array(v) for k, v in d.items()} for m, d in out.items()}
 
 
-def emulator(directory="emulator-reimei-E", out="emulator.pdf", methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:
+def emulator(directories=None, out="emulator.pdf", methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:
     """Training on the emulator: accuracy of the global model against the round.
+
+    ``directories``: results folders of the campaigns (default: every finished campaign of
+    ``qfedqgt.scenarios.EMULATOR_CAMPAIGNS``).
 
     Lines: accuracy of the noiseless circuit with the parameters trained on the emulator (mean over the
     seeds, standard error as a band).  Markers: accuracy measured on the emulator for the models of the
@@ -174,7 +190,7 @@ def emulator(directory="emulator-reimei-E", out="emulator.pdf", methods=("QFedAv
     """
     fig, ax = plt.subplots(1, len(EMULATOR_PANELS), figsize=(3.3 * len(EMULATOR_PANELS), 2.7), squeeze=False, sharey=True)
     for j, (scenario, title) in enumerate(EMULATOR_PANELS):
-        res = load_runs(directory, scenario)
+        res = load_runs(directories or campaign_dirs(), scenario)
         for m in methods:
             if m not in res:
                 continue
@@ -195,6 +211,7 @@ def emulator(directory="emulator-reimei-E", out="emulator.pdf", methods=("QFedAv
         ax[0, j].axhline(0.25, color="0.6", lw=0.6, ls=":")
         ax[0, j].set_xlabel("Communication round")
         ax[0, j].set_title(title, loc="left", fontsize=9)
+        ax[0, j].xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(5))
     ax[0, 0].set_ylabel("Test accuracy")
     ax[0, 0].legend(frameon=False, loc="upper left")
     ax[0, 0].set_ylim(0.15, 0.6)
@@ -232,10 +249,10 @@ if __name__ == "__main__":
     elif cmd == "sweep":
         sweep()
     elif cmd == "emulator":
-        emulator(*sys.argv[2:3])
+        emulator(sys.argv[2:] or None)
     elif cmd == "table":
         table(sys.argv[2:])
     elif cmd == "all":
         geometry(); training(); sweep()
-        if os.path.exists(os.path.join(ROOT, "results", "emulator-reimei-E", "summary.json")):
+        if campaign_dirs():
             emulator()
