@@ -93,7 +93,19 @@ python scripts/run_federated.py --scenario shots_and_noise --backend nexus --dev
 The same command with `--device reimei` submits the experiment to the processor.  Finished jobs are cached
 under `results/<name>/nexus-cache-seed<seed>/`, and an interrupted run resumes without resubmitting them.
 The Nexus interface has been checked offline against a noiseless Aer simulation (`tests/test_programs.py`)
-and has not yet been run against the Nexus service.
+and was run on the syntax checker `reimei-SC` and on the emulator `reimei-E` on 2026-11-19:
+
+```bash
+python scripts/nexus_smoke.py --device reimei-SC                       # smallest job, no cost
+python scripts/nexus_geometry.py --device reimei-E --shots 100         # echo circuits for six error-rate multipliers
+```
+
+`results/nexus-geometry/reimei-E.json` holds the echo measurements of the paper (noise strength inferred on the
+emulator against the gate-level noise model).  A complete federated run on the emulator has not been made.  At the
+throughput measured on that day (a queue wait of five to ten minutes per batch of jobs and 30 to 45 circuit shots
+per second and job) one round of the first scenario with three methods takes about half an hour.
+A classical register may hold at most 64 bits on these backends, and the packed programs therefore spread their
+bits over several registers.
 
 ## Results
 

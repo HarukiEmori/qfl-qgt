@@ -65,6 +65,30 @@ def test_packed_programs_on_aer_match_exact_distribution():
     assert (req2.counts[0, :, 0] == 50).all()
 
 
+def test_long_programs_use_registers_of_at_most_64_bits():
+    """A program with more than 64 classical bits is split over several registers and parsed in order."""
+    pytest.importorskip("pytket.extensions.qiskit")
+    from qfedqgt.nexus import MAX_REGISTER_WIDTH, program_bits
+
+    t = sim.layered_ansatz(4, 1)
+    rng = np.random.default_rng(7)
+    X = rng.uniform(-1, 1, size=(20, t.n_data))
+    th = rng.uniform(-np.pi, np.pi, size=t.n_params)
+    A = t.angles(X, th)
+    prog = build_program(t, A, "long")
+    widths = sorted(reg.size for reg in prog.c_registers)
+    assert widths == [16, 64] and max(widths) <= MAX_REGISTER_WIDTH
+    assert len(program_bits(t.n, 20)) == 80 and len(set(program_bits(t.n, 20))) == 80
+    shots = 3000
+    req = Request(DeviceProfile(noisy=False), t, A, shots)
+    ex = AerExecutor(segments=20, seed=2)
+    ex.run([req])
+    assert ex.n_programs == 1 and req.counts.shape == (1, 20, t.dim)
+    p = np.abs(sim.statevector(t, A)) ** 2
+    # every segment, including those stored in the second register, has its own distribution
+    assert np.abs(req.counts[0] / shots - p).max() < 5 * np.sqrt(0.25 / shots)
+
+
 def test_cost_formula():
     t = sim.layered_ansatz(4, 2)
     # 24 one-qubit gates and 6 ZZ gates per circuit; 4 preparations, 4 measurements per segment

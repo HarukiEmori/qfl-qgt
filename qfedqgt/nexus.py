@@ -50,12 +50,29 @@ class DeviceProfile:
 
 
 # --------------------------------------------------------------------------- programs
+MAX_REGISTER_WIDTH = 64      # the backend rejects wider classical registers (error CHI-1002)
+
+
+def program_bits(n: int, segments: int) -> list:
+    """Classical bits of a packed program in measurement order (segment by segment, qubit by qubit).
+
+    The bits are spread over registers ``m0, m1, ...`` of at most ``MAX_REGISTER_WIDTH`` bits.
+    """
+    from pytket import Bit
+
+    return [Bit(f"m{i // MAX_REGISTER_WIDTH}", i % MAX_REGISTER_WIDTH) for i in range(n * segments)]
+
+
 def build_program(template: sim.Template, A: np.ndarray, name: str):
     """pytket circuit running the rows of ``A`` one after another on the same qubits."""
-    from pytket import Circuit, OpType
+    from pytket import Circuit, OpType, Qubit
 
     n, S = template.n, A.shape[0]
-    c = Circuit(n, n * S, name=name)
+    c = Circuit(n, name=name)
+    total = n * S
+    for r in range((total + MAX_REGISTER_WIDTH - 1) // MAX_REGISTER_WIDTH):
+        c.add_c_register(f"m{r}", min(MAX_REGISTER_WIDTH, total - r * MAX_REGISTER_WIDTH))
+    bits = program_bits(n, S)
     for s in range(S):
         for g, gate in enumerate(template.gates):
             a = float(A[s, g]) / np.pi                       # pytket angles are in half-turns
@@ -70,7 +87,7 @@ def build_program(template: sim.Template, A: np.ndarray, name: str):
             else:
                 raise ValueError(gate.kind)
         for q in range(n):
-            c.Measure(q, s * n + q)
+            c.Measure(Qubit(q), bits[s * n + q])
         if s < S - 1:
             for q in range(n):
                 c.add_gate(OpType.Reset, [q])
@@ -158,14 +175,12 @@ class AerExecutor(_ProgramExecutor):
         self.seed = seed
 
     def _submit(self, device, template, chunks, shots, label):
-        from pytket import Bit
-
         tables = []
         for j, ch in enumerate(chunks):
             circ = self.backend.get_compiled_circuit(build_program(template, ch, f"{label}-{j}"), optimisation_level=0)
             self.seed += 1
             res = self.backend.run_circuit(circ, n_shots=shots, seed=self.seed)
-            bits = [Bit(i) for i in range(template.n * len(ch))]
+            bits = program_bits(template.n, len(ch))
             tables.append(np.asarray(res.get_shots(cbits=bits), dtype=np.int64))
         return tables
 
@@ -241,7 +256,7 @@ class NexusExecutor(_ProgramExecutor):
                     continue
                 if rec.get("event") == "submitted" and "keys" in rec:
                     submitted[rec["job_id"]] = rec
-                elif rec.get("event") in ("completed", "reattach-failed"):
+                elif rec.get("event") in ("completed", "reattach-failed", "failed"):
                     done.add(rec.get("job_id"))
         out = {}
         for job_id, rec in submitted.items():
@@ -293,16 +308,21 @@ class NexusExecutor(_ProgramExecutor):
         return dict(keys=keys, jobs=jobs, template=template, chunks=chunks)
 
     def _collect(self, handle):
-        from pytket import Bit
-
         qnx = self.qnx
         n = handle["template"].n
         for item in handle["jobs"]:
-            qnx.jobs.wait_for(item["job"], timeout=self.timeout)
+            try:
+                qnx.jobs.wait_for(item["job"], timeout=self.timeout)
+            except Exception as exc:
+                # an errored job is recorded so that a later run submits its programs again
+                # instead of re-attaching to it
+                self._log(dict(event="failed", name=item["name"], job_id=str(item["job"].id),
+                               error=repr(exc)[:300], time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
+                raise
             by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
             for j, ref_id in zip(item["part"], item["ref_ids"]):
                 res = by_input[ref_id].download_result()
-                bits = [Bit(i) for i in range(n * len(handle["chunks"][j]))]
+                bits = program_bits(n, len(handle["chunks"][j]))
                 table = np.asarray(res.get_shots(cbits=bits), dtype=np.uint8)
                 np.savez_compressed(os.path.join(self.cache_dir, handle["keys"][j] + ".npz"), shots=table)
             try:

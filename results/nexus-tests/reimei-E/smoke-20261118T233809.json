@@ -1,0 +1,40 @@
+[
+ {
+  "device": "reimei-E",
+  "scale": 1.0,
+  "shots": 20,
+  "inputs": 2,
+  "seconds": 96.9,
+  "programs": 2,
+  "cost_formula": 12.66,
+  "cost_charged": 12.463999999999999,
+  "echo_survival": 1.0,
+  "echo_survival_local": 0.9846,
+  "p_hat": 0.0,
+  "features_rms_difference": 0.17468120595388212,
+  "counts_shape": [
+   1,
+   2,
+   16
+  ]
+ },
+ {
+  "device": "reimei-E",
+  "scale": 200.0,
+  "shots": 20,
+  "inputs": 2,
+  "seconds": 82.6,
+  "programs": 2,
+  "cost_formula": 12.66,
+  "cost_charged": 12.463999999999999,
+  "echo_survival": 0.125,
+  "echo_survival_local": 0.1277,
+  "p_hat": 0.7418011102528389,
+  "features_rms_difference": 0.29488395464677597,
+  "counts_shape": [
+   1,
+   2,
+   16
+  ]
+ }
+]

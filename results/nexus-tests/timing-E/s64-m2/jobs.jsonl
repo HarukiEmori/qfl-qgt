@@ -1,0 +1,2 @@
+{"event": "submitted", "name": "timing-E-64-2-0001-reimei-E-x200-s2-c64-000713", "job_id": "0e20150f-dbf8-4fdf-9fb2-761ac542ef57", "device": {"device_name": "reimei-E", "gate_scale": 200.0, "noisy": true}, "shots": 2, "programs": 1, "keys": ["6f648eaaf05e6e9764584ec0b6298885436d6dd0"], "ref_ids": ["0fa34976-a32e-4b1d-b76c-8454edfa04b0"], "time": "2026-11-19T00:07:13-0800"}
+{"event": "completed", "name": "timing-E-64-2-0001-reimei-E-x200-s2-c64-000713", "job_id": "0e20150f-dbf8-4fdf-9fb2-761ac542ef57", "cost": 7.9696, "time": "2026-11-19T00:18:28-0800"}

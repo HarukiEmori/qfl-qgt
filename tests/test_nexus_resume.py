@@ -30,6 +30,7 @@ class FakeQnx(types.ModuleType):
         super().__init__("qnexus")
         self.store = {}            # job id -> job
         self.started, self.fetched, self.configs = [], [], []
+        self.broken = set()        # ids of jobs that end in an error
         fake = self
 
         class projects:
@@ -50,6 +51,8 @@ class FakeQnx(types.ModuleType):
         class jobs:
             @staticmethod
             def wait_for(job, timeout=None):
+                if str(job.id) in fake.broken:
+                    raise RuntimeError("job errored")
                 return None
 
             @staticmethod
@@ -145,3 +148,18 @@ def test_submit_cache_and_reattach(tmp_path, monkeypatch):
     _, reqs6 = _requests(device5)
     ex6.run(reqs6)
     assert len(fake.started) == 4 and reqs6[1].counts.shape == (1, 2, t5.dim)
+
+
+    # 6. a job that ends in an error is recorded as failed and is not re-attached by the next run
+    device7 = DeviceProfile("reimei-E", 160.0)
+    ex7 = NexusExecutor("test", cache, segments=2)
+    t7, reqs7 = _requests(device7)
+    handle = ex7._submit(device7, t7, chunks, reqs7[0].shots, "broken")
+    fake.broken.add(str(handle["jobs"][0]["job"].id))
+    with pytest.raises(RuntimeError):
+        ex7._collect(handle)
+    n_started, n_fetched = len(fake.started), len(fake.fetched)
+    ex8 = NexusExecutor("test", cache, segments=2)
+    _, reqs8 = _requests(device7)
+    ex8.run(reqs8)
+    assert len(fake.started) == n_started + 1 and len(fake.fetched) == n_fetched

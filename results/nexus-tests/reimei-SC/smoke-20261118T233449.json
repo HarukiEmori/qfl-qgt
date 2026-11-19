@@ -1,0 +1,21 @@
+[
+ {
+  "device": "reimei-SC",
+  "scale": 1.0,
+  "shots": 10,
+  "inputs": 2,
+  "seconds": 11.2,
+  "programs": 2,
+  "cost_formula": 11.33,
+  "cost_charged": 12.239999999999998,
+  "echo_survival": 1.0,
+  "echo_survival_local": 0.9846,
+  "p_hat": 0.0,
+  "features_rms_difference": 0.4368736903074109,
+  "counts_shape": [
+   1,
+   2,
+   16
+  ]
+ }
+]
