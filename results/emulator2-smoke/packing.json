@@ -1,0 +1,11 @@
+{
+ "scenarios": [
+  "emulator2_iid"
+ ],
+ "seeds": [
+  900,
+  901
+ ],
+ "segments": 2448,
+ "segments_schedule": []
+}

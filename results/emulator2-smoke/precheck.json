@@ -1,0 +1,79 @@
+{
+ "name": "emulator2-smoke",
+ "jobs": {
+  "submitted": 5,
+  "completed": 5,
+  "failed": 0,
+  "cost_hqc": 142.77280000000002
+ },
+ "noise_strength": {
+  "reference": [
+   0.0,
+   0.0,
+   0.0,
+   0.016807919749824984
+  ],
+  "noisy": [
+   0.6348516283298893,
+   0.4522774424948339,
+   0.6348516283298893,
+   0.7418011102528389,
+   0.5169541084603521,
+   0.8174258141649445,
+   0.4836022205056778,
+   0.5169541084603521,
+   0.4836022205056778,
+   0.552786404500042,
+   0.7418011102528389,
+   0.4836022205056778
+  ]
+ },
+ "expected_noise_strength": {
+  "value": 0.708452405257735,
+  "source": "results/nexus-geometry/reimei-E-calibration_n2.json",
+  "multiplier": 400.0
+ },
+ "tests": [
+  {
+   "test": "the run has finished (summary.json exists)",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "test": "every submitted job is completed",
+   "passed": true,
+   "detail": "5 of 5"
+  },
+  {
+   "test": "no job has failed",
+   "passed": true,
+   "detail": "0 failed"
+  },
+  {
+   "test": "every run has its result file",
+   "passed": true,
+   "detail": "2 of 2"
+  },
+  {
+   "test": "the accuracies, losses, parameters, weights and noise estimates are finite",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "test": "mean noise strength of the reference clients is at most 0.1",
+   "passed": true,
+   "detail": "0.004"
+  },
+  {
+   "test": "mean noise strength of the noisy clients is within 0.2 of the echo measurement",
+   "passed": true,
+   "detail": "0.588, echo measurement 0.708 (results/nexus-geometry/reimei-E-calibration_n2.json)"
+  },
+  {
+   "test": "the noisy clients are noisier than the reference clients",
+   "passed": true,
+   "detail": "0.588 against 0.004"
+  }
+ ],
+ "passed": true
+}

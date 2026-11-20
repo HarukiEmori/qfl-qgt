@@ -131,8 +131,12 @@ python scripts/make_figures.py emulator
 The federated training is organized in campaigns (`EMULATOR_CAMPAIGNS` in `qfedqgt/scenarios.py`).  The runs of
 a campaign advance round by round together, and one results folder holds one campaign.  The seeds of a campaign
 and the packing of its circuits into programs are stored in `packing.json` of its folder and are reused by the
-command above.  In `results/emulator-reimei-E/` (seeds 0 to 5) the packing changed after the fourth round
-(528 circuits per program, then 816).
+command above.  The four-class experiment has two campaigns with the same protocol: `results/emulator-reimei-E/`
+(seeds 0 to 5; the packing changed after the fourth round from 528 to 816 circuits per program) and
+`results/emulator-reimei-E-2/` (seeds 6 to 15, run after the first campaign had been evaluated, to reach the 16 seeds
+of the simulations).  All 16 seeds are reported, and `scripts/emulator_summary.py` also lists the two campaigns
+separately.  The second campaign was interrupted for about ten hours while the client computer slept; no job was
+submitted twice.
 
 The same steps are in `notebooks/reimei_E_experiments.ipynb`, which is stored with its output.
 
@@ -179,7 +183,8 @@ later.
 | `results/nexus-position/reimei-E.json` | Frequency of the all-zero outcome of 600 copies of one echo circuit in a single program, for every position: the change from the first to the last circuit is -0.0024 ± 0.0018 at the reference error rates and +0.003 ± 0.010 at 300-fold error rates |
 | `results/emulator-design/` | Candidate designs of the two-class experiment in the local model: circuits on two, three and four qubits, numbers of noisy clients, minibatch sizes, shots, and Dirichlet partitions (step sizes on the tuning seeds 100 to 131, comparison on the seeds 200 to 215) |
 | `results/nexus-geometry/reimei-E-calibration_n2.json`, `...-calibration_n3.json` | Echo survival of the one-layer circuits on two and three qubits for error-rate multipliers from 1 to 700, with the matched multipliers of the local model.  For the two-qubit circuit the survival is 0.314 ± 0.016 at the multiplier 400 and falls below 1/4, the value of the maximally mixed state, at 600 and 700 |
-| `results/emulator-reimei-E/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, six seeds each |
+| `results/emulator-reimei-E/`, `results/emulator-reimei-E-2/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, 16 seeds each in two campaigns (seeds 0 to 5 and 6 to 15) |
+| `results/emulator2-smoke/` | Pre-check of the two-class experiment: one round of two runs with the seeds 900 and 901 (5 jobs, among them a program with 2448 two-qubit circuits), and the tests of `scripts/emulator_precheck.py` (`precheck.json`, `precheck.log`) |
 | `results/emulator-local*/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds with the same grouping into campaigns, 16 reported seeds, and every step size of the grids |
 
 **Run records.**  Every script that executes circuits ends by showing a run record and saves it next to its
@@ -205,21 +210,28 @@ with record_run("my experiment", executor=executor, save_to="results/my-experime
   about 6 s plus 0.011 s per circuit and shot for four-qubit one-layer circuits (528 circuits took 13 s with one
   shot and about 3 minutes with 30 shots).  Jobs with several programs were much slower (2 to 4 minutes per
   program), so every program is submitted as its own job.
-- Programs of 528, 816 and 1224 circuits were accepted; a program of 2112 circuits was not accepted within
-  20 minutes.  A classical register may hold at most 64 bits, and the packed programs spread their bits over
-  several registers.
+- Programs of 528, 816 and 1224 four-qubit circuits were accepted; a program of 2112 four-qubit circuits was not
+  accepted within 20 minutes.  A program of 2448 two-qubit circuits (the same number of measured bits as 1224
+  four-qubit circuits) was accepted and executed.  A classical register may hold at most 64 bits, and the packed
+  programs spread their bits over several registers.
+- For strong multipliers the frequency of the all-zero outcome of an echo circuit falls below the value of the
+  maximally mixed state (one-layer circuits: from the multiplier 500 on four and three qubits and from 600 on two
+  qubits).  The error probabilities are then saturated, a depolarizing model no longer describes the device, and the
+  local model has no matching multiplier; the experiments use multipliers below this range (300 and 400).
 - The default waiting of the client (`qnx.jobs.wait_for`) polls with intervals of up to 20 minutes; the
   executor asks for the job status every 20 s instead.
 
-One round of the emulator experiment (12 runs, 4992 circuits) therefore took about 20 to 30 minutes, and the
-experiment is much smaller than the simulations.  Interrupted campaigns resume from the cache and re-attach to
+One round of the four-class experiment (12 runs, 4992 circuits) therefore took about 20 to 30 minutes, and the
+experiment is much smaller than the simulations.  The cost formula gives 0.279 HQC per image and shot for the
+one-layer circuit on four qubits (17 circuits per image) and 0.065 HQC for the one on two qubits (9 circuits per
+image), which is why the two-class experiment uses the two-qubit circuit.  Interrupted campaigns resume from the cache and re-attach to
 the jobs that are still running (`qfedqgt/nexus.py`).
 
 ## Results
 
 ### Emulator `reimei-E`
 
-Final test accuracy of the models trained on the emulator, as the mean over 6 seeds of the average over the last
+Final test accuracy of the models trained on the emulator, as the mean over 16 seeds of the average over the last
 5 rounds.  `Device` is measured on the emulator (60 test images, 20 shots each), and `Noiseless` is the accuracy
 of the noiseless circuit with the same parameters on all 400 test images.  The differences are the accuracy of
 QFedQGT minus that of QFedAvg and of QFedFisher in percentage points with the standard error of the paired
@@ -227,16 +239,16 @@ difference, followed by the number of seeds in which QFedQGT is higher.
 
 | Data | Accuracy | QFedAvg | QFedFisher | QFedQGT | Difference | Seeds |
 | :-- | :-- | :-: | :-: | :-: | :-: | :-: |
-| IID | Device | 0.321 | 0.273 | 0.391 | +7.0 ± 5.3, +11.7 ± 5.3 | 4/6, 5/6 |
-| IID | Noiseless | 0.323 | 0.314 | 0.416 | +9.4 ± 3.1, +10.3 ± 6.5 | 6/6, 4/6 |
-| Dirichlet partition | Device | 0.298 | 0.322 | 0.352 | +5.4 ± 3.1, +2.9 ± 2.7 | 6/6, 3/6 |
-| Dirichlet partition | Noiseless | 0.287 | 0.280 | 0.387 | +10.0 ± 5.2, +10.7 ± 3.0 | 6/6, 6/6 |
+| IID | Device | 0.310 | 0.274 | 0.393 | +8.3 ± 2.8, +11.9 ± 2.9 | 11/16, 14/16 |
+| IID | Noiseless | 0.307 | 0.287 | 0.398 | +9.1 ± 2.6, +11.0 ± 3.0 | 13/16, 13/16 |
+| Dirichlet partition | Device | 0.300 | 0.314 | 0.375 | +7.5 ± 2.1, +6.1 ± 1.8 | 15/16, 12/16 |
+| Dirichlet partition | Noiseless | 0.281 | 0.285 | 0.371 | +9.0 ± 3.0, +8.6 ± 2.5 | 13/16, 14/16 |
 
-Averaged over the two partitions, with one value per seed, the differences are +6.2 ± 4.1 and +7.3 ± 2.0 points on the device and
-+9.7 ± 4.0 and +10.5 ± 2.8 points for the noiseless circuit.  Of the four differences measured on the device, one exceeds twice the standard error.
+Averaged over the two partitions, with one value per seed, the differences are +7.9 ± 2.0 and +9.0 ± 1.8 points on the device and
++9.0 ± 2.2 and +9.8 ± 2.0 points for the noiseless circuit.  All four differences measured on the device exceed twice their standard errors.
 The same experiment in the local gate-level model with 16 seeds (`results/sim-emulator_*`) gives differences of
 +12.4 ± 2.4 and +13.7 ± 2.0 points (IID) and +9.8 ± 1.8 and +10.2 ± 2.3 points (Dirichlet partition).
-The 12 runs comprised 85,680 circuits and 1,361,520 shots in 134 jobs.  `python scripts/emulator_summary.py` prints these numbers.
+The 32 runs comprised 228,480 circuits and 3,630,720 shots in 337 jobs.  `python scripts/emulator_summary.py` prints these numbers.
 
 ### Simulations with the gate-level noise model
 

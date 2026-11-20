@@ -1,0 +1,176 @@
+{
+ "task": "federated training of several runs in lockstep",
+ "entry": "scripts/run_emulator.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "c927dd878e6c3f65ad29c84af960680836b3f3a2",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x400"
+  ],
+  "cache": "results/emulator2-smoke/cache"
+ },
+ "parameters": {
+  "scenarios": [
+   "emulator2_iid"
+  ],
+  "seeds": [
+   900,
+   901
+  ],
+  "methods": [
+   "QFedAvg",
+   "QFedFisher",
+   "QFedQGT"
+  ],
+  "rounds": 1,
+  "batch": 8,
+  "echo_shots": 5,
+  "eval_shots": 100,
+  "eval_inputs": 20,
+  "shots_per_circuit": {
+   "emulator2_iid": [
+    1,
+    16
+   ]
+  },
+  "error_rate_multipliers": {
+   "emulator2_iid": [
+    1.0,
+    400.0
+   ]
+  },
+  "learning_rates": {
+   "emulator2_iid": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   }
+  },
+  "segments": 2448,
+  "programs_per_job": 1,
+  "segments_schedule": []
+ },
+ "started": "2026-11-20T05:42:55-0800",
+ "finished": "2026-11-20T05:42:55-0800",
+ "duration_s": 0.0,
+ "jobs": [
+  {
+   "job_id": "6c54b56e-15b0-4729-b77e-d3fe32bcbb7c",
+   "name": "emulator2-smoke-0001-reimei-E-x1-p2-c896-045753",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    16
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:57:58-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": true,
+   "completed": "2026-11-20T05:35:02-0800",
+   "cost": 99.0032,
+   "source": "cache"
+  },
+  {
+   "job_id": "c084545b-3a0c-40e0-bf17-21cec6dd3075",
+   "name": "emulator2-smoke-0002-reimei-E-x1-p2-c896-045758",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:57:59-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": true,
+   "completed": "2026-11-20T05:35:03-0800",
+   "cost": 6.536,
+   "source": "cache"
+  },
+  {
+   "job_id": "0f0d4c3e-125f-4fe1-95d3-93a12394c2e4",
+   "name": "emulator2-smoke-0003-reimei-E-x400-p3-c2688-045759",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:58:36-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": true,
+   "completed": "2026-11-20T05:35:46-0800",
+   "cost": 21.6464,
+   "source": "cache"
+  },
+  {
+   "job_id": "b5bd49a8-4c88-46bb-a984-720b20f17bbd",
+   "name": "emulator2-smoke-0004-reimei-E-x400-p3-c2688-045836",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "noisy": true,
+   "shots": [
+    1
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:58:37-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": true,
+   "completed": "2026-11-20T05:35:46-0800",
+   "cost": 5.9792,
+   "source": "cache"
+  },
+  {
+   "job_id": "246136e4-e02d-4599-b264-6619d4eb1f8a",
+   "name": "emulator2-smoke-0005-reimei-E-x400-p3-c2688-045837",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "noisy": true,
+   "shots": [
+    5
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:58:38-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": true,
+   "completed": "2026-11-20T05:35:47-0800",
+   "cost": 9.608,
+   "source": "cache"
+  }
+ ],
+ "usage": {
+  "n_circuits": 3584,
+  "n_shots": 17056,
+  "n_programs": 5,
+  "cost_formula_hqc": 149.8512
+ },
+ "outputs": [
+  "results/emulator2-smoke/emulator2_iid-seed900.npz",
+  "results/emulator2-smoke/emulator2_iid-seed901.npz",
+  "results/emulator2-smoke/summary.json",
+  "results/emulator2-smoke/provenance.json"
+ ],
+ "notes": []
+}

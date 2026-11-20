@@ -1,0 +1,24 @@
+[pre-check emulator2-smoke] 2026-11-20 05:31:16 pre-check run started; the campaign emulator2-reimei-E follows if its tests pass
+[OK ] the run has finished (summary.json exists)
+[OK ] every submitted job is completed  (5 of 5)
+[OK ] no job has failed  (0 failed)
+[OK ] every run has its result file  (2 of 2)
+[NO ] all stored arrays are finite
+[OK ] mean noise strength of the reference clients is at most 0.1  (0.004)
+[OK ] mean noise strength of the noisy clients is within 0.2 of the echo measurement  (0.588, echo measurement 0.708 (results/nexus-geometry/reimei-E-calibration_n2.json))
+[OK ] the noisy clients are noisier than the reference clients  (0.588 against 0.004)
+jobs: 5 submitted, recorded cost 142.8 HQC
+PRE-CHECK FAILED
+[pre-check emulator2-smoke] 2026-11-20 05:35:47 the tests of the pre-check run failed; the campaign emulator2-reimei-E is not started
+[pre-check emulator2-smoke] 2026-11-20 05:42:55 pre-check run started; the campaign emulator2-reimei-E follows if its tests pass
+[OK ] the run has finished (summary.json exists)
+[OK ] every submitted job is completed  (5 of 5)
+[OK ] no job has failed  (0 failed)
+[OK ] every run has its result file  (2 of 2)
+[OK ] the accuracies, losses, parameters, weights and noise estimates are finite
+[OK ] mean noise strength of the reference clients is at most 0.1  (0.004)
+[OK ] mean noise strength of the noisy clients is within 0.2 of the echo measurement  (0.588, echo measurement 0.708 (results/nexus-geometry/reimei-E-calibration_n2.json))
+[OK ] the noisy clients are noisier than the reference clients  (0.588 against 0.004)
+jobs: 5 submitted, recorded cost 142.8 HQC
+PRE-CHECK PASSED
+[pre-check emulator2-smoke] 2026-11-20 05:42:56 the tests passed; starting the campaign emulator2-reimei-E

@@ -1,0 +1,1581 @@
+{
+ "name": "emulator-reimei-E-2",
+ "backend": "nexus",
+ "device": "reimei-E",
+ "tail": 5,
+ "methods": [
+  "QFedAvg",
+  "QFedFisher",
+  "QFedQGT"
+ ],
+ "runs": [
+  {
+   "scenario": "emulator_iid",
+   "seed": 6,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.29,
+     "accuracy_noiseless": 0.28850000000000003,
+     "loss_noiseless": 1.4004146640316195
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.33333333333333337,
+     "accuracy_noiseless": 0.265,
+     "loss_noiseless": 1.4111909841319628
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.4633333333333334,
+     "accuracy_noiseless": 0.437,
+     "loss_noiseless": 1.0780800268407924
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 6,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 7,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.19,
+     "accuracy_noiseless": 0.1715,
+     "loss_noiseless": 1.9243666262868182
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.30666666666666664,
+     "accuracy_noiseless": 0.257,
+     "loss_noiseless": 1.6834710291124915
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.32,
+     "accuracy_noiseless": 0.278,
+     "loss_noiseless": 1.272832302767156
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 7,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 8,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.15333333333333332,
+     "accuracy_noiseless": 0.16949999999999998,
+     "loss_noiseless": 2.1707063883070887
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.22999999999999998,
+     "accuracy_noiseless": 0.21349999999999997,
+     "loss_noiseless": 1.7983276621089352
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.3333333333333333,
+     "accuracy_noiseless": 0.39899999999999997,
+     "loss_noiseless": 1.3470940571770862
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 8,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 9,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.3733333333333334,
+     "accuracy_noiseless": 0.38099999999999995,
+     "loss_noiseless": 1.8129437648023399
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.32,
+     "accuracy_noiseless": 0.3935,
+     "loss_noiseless": 1.2872559384255704
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.5966666666666667,
+     "accuracy_noiseless": 0.6265,
+     "loss_noiseless": 0.9025174721344265
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 9,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 10,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.4,
+     "accuracy_noiseless": 0.40199999999999997,
+     "loss_noiseless": 1.3554906479607198
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.36,
+     "accuracy_noiseless": 0.354,
+     "loss_noiseless": 1.4024778424324142
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.4033333333333333,
+     "accuracy_noiseless": 0.39,
+     "loss_noiseless": 1.2734822825491612
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 10,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 11,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.24666666666666667,
+     "accuracy_noiseless": 0.236,
+     "loss_noiseless": 2.9626652253610084
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.21666666666666665,
+     "accuracy_noiseless": 0.2525,
+     "loss_noiseless": 1.8203639014634607
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.46333333333333326,
+     "accuracy_noiseless": 0.37249999999999994,
+     "loss_noiseless": 1.2116998495451856
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 11,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 12,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.32333333333333336,
+     "accuracy_noiseless": 0.267,
+     "loss_noiseless": 1.4089974417753484
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.2633333333333333,
+     "accuracy_noiseless": 0.22599999999999998,
+     "loss_noiseless": 1.8231838950410206
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.39333333333333337,
+     "accuracy_noiseless": 0.4585,
+     "loss_noiseless": 1.1806046706452502
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 12,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 13,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.3633333333333334,
+     "accuracy_noiseless": 0.3715,
+     "loss_noiseless": 1.6272332784385388
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.18,
+     "accuracy_noiseless": 0.2,
+     "loss_noiseless": 3.3397166030657326
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.35333333333333333,
+     "accuracy_noiseless": 0.325,
+     "loss_noiseless": 1.2975793108931293
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 13,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 14,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.2866666666666667,
+     "accuracy_noiseless": 0.261,
+     "loss_noiseless": 2.1252837127987854
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.3766666666666667,
+     "accuracy_noiseless": 0.3395,
+     "loss_noiseless": 2.163791975267606
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.27999999999999997,
+     "accuracy_noiseless": 0.26749999999999996,
+     "loss_noiseless": 1.238151236302426
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 14,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_iid",
+   "seed": 15,
+   "learning_rates": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.4133333333333333,
+     "accuracy_noiseless": 0.429,
+     "loss_noiseless": 1.5025670670647977
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.15999999999999998,
+     "accuracy_noiseless": 0.2145,
+     "loss_noiseless": 2.0828750604534685
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.33999999999999997,
+     "accuracy_noiseless": 0.3125,
+     "loss_noiseless": 1.288610173479188
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_iid",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": null,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 15,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 6,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.2833333333333333,
+     "accuracy_noiseless": 0.2625,
+     "loss_noiseless": 1.5462500859482926
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.32999999999999996,
+     "accuracy_noiseless": 0.3555,
+     "loss_noiseless": 1.3811002102650058
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.39666666666666667,
+     "accuracy_noiseless": 0.3975,
+     "loss_noiseless": 1.256502604142217
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 6,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 7,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.29000000000000004,
+     "accuracy_noiseless": 0.199,
+     "loss_noiseless": 1.8807719447574442
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.30333333333333334,
+     "accuracy_noiseless": 0.21749999999999997,
+     "loss_noiseless": 1.461489064300244
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.3333333333333333,
+     "accuracy_noiseless": 0.34600000000000003,
+     "loss_noiseless": 2.1042889046301143
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 7,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 8,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.32999999999999996,
+     "accuracy_noiseless": 0.292,
+     "loss_noiseless": 1.35881233150856
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.19666666666666668,
+     "accuracy_noiseless": 0.174,
+     "loss_noiseless": 1.8869763840808909
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.3566666666666667,
+     "accuracy_noiseless": 0.263,
+     "loss_noiseless": 1.2694839408192418
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 8,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 9,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.31666666666666665,
+     "accuracy_noiseless": 0.33149999999999996,
+     "loss_noiseless": 1.6337540168833748
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.20666666666666664,
+     "accuracy_noiseless": 0.24500000000000002,
+     "loss_noiseless": 2.5965080660953963
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.41,
+     "accuracy_noiseless": 0.5025000000000001,
+     "loss_noiseless": 1.343588612459803
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 9,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 10,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.3333333333333333,
+     "accuracy_noiseless": 0.323,
+     "loss_noiseless": 1.5790801092599867
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.29333333333333333,
+     "accuracy_noiseless": 0.269,
+     "loss_noiseless": 1.636096782507965
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.38,
+     "accuracy_noiseless": 0.32700000000000007,
+     "loss_noiseless": 1.3723767922136154
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 10,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 11,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.17666666666666667,
+     "accuracy_noiseless": 0.1355,
+     "loss_noiseless": 2.0867403432897222
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.29333333333333333,
+     "accuracy_noiseless": 0.1675,
+     "loss_noiseless": 1.4435771068114776
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.39666666666666667,
+     "accuracy_noiseless": 0.383,
+     "loss_noiseless": 1.2434058821155343
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 11,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 12,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.34,
+     "accuracy_noiseless": 0.3135,
+     "loss_noiseless": 1.816422950848732
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.4033333333333333,
+     "accuracy_noiseless": 0.3535,
+     "loss_noiseless": 1.3352113776196994
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.4133333333333333,
+     "accuracy_noiseless": 0.3255,
+     "loss_noiseless": 1.4049133271041452
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 12,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 13,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.3566666666666667,
+     "accuracy_noiseless": 0.393,
+     "loss_noiseless": 1.3369931512242739
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.31333333333333335,
+     "accuracy_noiseless": 0.20350000000000001,
+     "loss_noiseless": 1.5236915398100082
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.37666666666666665,
+     "accuracy_noiseless": 0.2855,
+     "loss_noiseless": 1.2060773794740332
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 13,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 14,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.35333333333333333,
+     "accuracy_noiseless": 0.298,
+     "loss_noiseless": 1.4319101295648284
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.38333333333333336,
+     "accuracy_noiseless": 0.43899999999999995,
+     "loss_noiseless": 1.5672301883448791
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.34333333333333327,
+     "accuracy_noiseless": 0.29700000000000004,
+     "loss_noiseless": 1.9222015013723062
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 14,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  },
+  {
+   "scenario": "emulator_dirichlet",
+   "seed": 15,
+   "learning_rates": {
+    "QFedAvg": 0.3,
+    "QFedFisher": 0.15,
+    "QFedQGT": 0.1
+   },
+   "final": {
+    "QFedAvg": {
+     "accuracy_device": 0.22666666666666666,
+     "accuracy_noiseless": 0.22800000000000004,
+     "loss_noiseless": 2.5253243905669374
+    },
+    "QFedFisher": {
+     "accuracy_device": 0.3666666666666667,
+     "accuracy_noiseless": 0.45549999999999996,
+     "loss_noiseless": 1.98142910225912
+    },
+    "QFedQGT": {
+     "accuracy_device": 0.4800000000000001,
+     "accuracy_noiseless": 0.488,
+     "loss_noiseless": 1.380039825546584
+    }
+   },
+   "scenario_definition": {
+    "name": "emulator_dirichlet",
+    "classes": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n_qubits": 4,
+    "layers": 1,
+    "beta": 4.0,
+    "angle_scale": 0.5,
+    "n_train_per_class": 400,
+    "n_test_per_class": 100,
+    "n_per_client": 40,
+    "alpha": 0.5,
+    "gate_scales": [
+     1.0,
+     1.0,
+     300.0,
+     300.0
+    ],
+    "shots": [
+     30,
+     30,
+     1,
+     1
+    ],
+    "eval_scale": 1.0,
+    "local_scales": [
+     1.0,
+     1.0,
+     370.0,
+     370.0
+    ],
+    "init_width": 0.5
+   },
+   "run": {
+    "rounds": 15,
+    "batch": 2,
+    "local_steps": 1,
+    "echo_shots": 5,
+    "server_lr": 1.0,
+    "fisher_delta": 0.01,
+    "p_max": 0.9,
+    "eval_shots": 20,
+    "eval_every": 1,
+    "seed": 15,
+    "metric_inputs": 8,
+    "lagged": true,
+    "smoothing": 0.5
+   }
+  }
+ ],
+ "seconds": 10138.21834397316,
+ "usage": {
+  "n_circuits": 142800,
+  "n_shots": 2269200,
+  "n_programs": 203,
+  "cost_formula_hqc": 38330.679999999986,
+  "cost_charged_hqc": 14828.576000000014
+ }
+}

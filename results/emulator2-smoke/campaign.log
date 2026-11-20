@@ -1,0 +1,116 @@
+[campaign emulator2-smoke] 2026-11-20 05:31:16 started (device reimei-E, options: --scenarios emulator2_iid --seeds 900 901 --rounds 1 --no-eval)
+round   1  noiseless accuracy, mean over the runs: QFedAvg=0.620  QFedFisher=0.580  QFedQGT=0.537  (270 s)
+emulator2_iid          seed 900  QFedAvg: device nan noiseless 0.407  QFedFisher: device nan noiseless 0.383  QFedQGT: device nan noiseless 0.340
+emulator2_iid          seed 901  QFedAvg: device nan noiseless 0.750  QFedFisher: device nan noiseless 0.735  QFedQGT: device nan noiseless 0.735
+==============================================================================
+RUN RECORD
+-- Program
+   task                              federated training of several runs in lockstep
+   entry point                       scripts/run_emulator.py
+   repository                        https://github.com/HarukiEmori/qfl-qgt
+   commit                            cb804ab055da003a334a3d3bf8f1e5a5d627fd77
+   working tree                      clean
+-- When
+   started                           2026-11-20T05:31:17-0800
+   finished                          2026-11-20T05:35:47-0800
+   duration                          270 s
+   jobs submitted from               2026-11-20T04:57:58-0800
+   last job completed                2026-11-20T05:35:47-0800
+-- Device
+   kind                              Quantinuum Nexus
+   project                           QFedQGT
+   device profiles                   reimei-E-x1, reimei-E-x400
+   cache                             results/emulator2-smoke/cache
+   jobs                              5 (0 read from the cache), 5 programs
+   devices of the jobs               reimei-E x1, reimei-E x400
+   commits that submitted the jobs   5abf5500ee
+   cost charged (HQC)                142.8
+   job identifiers                   6c54b56e-15b0-4729-b77e-d3fe32bcbb7c, c084545b-3a0c-40e0-bf17-21cec6dd3075, 0f0d4c3e-125f-4fe1-95d3-93a12394c2e4, b5bd49a8-4c88-46bb-a984-720b20f17bbd, ... (5 in total, all in the saved record)
+-- Usage
+   n circuits                        3584
+   n shots                           17056
+   n programs                        5
+   cost formula hqc                  149.851
+-- Parameters
+   scenarios                         emulator2_iid
+   seeds                             900, 901
+   methods                           QFedAvg, QFedFisher, QFedQGT
+   rounds                            1
+   batch                             8
+   echo shots                        5
+   eval shots                        100
+   eval inputs                       20
+   shots per circuit                 emulator2_iid: 1, 16
+   error rate multipliers            emulator2_iid: 1, 400
+   learning rates                    emulator2_iid: QFedAvg: 0.6, QFedFisher: 0.3, QFedQGT: 0.1
+   segments                          2448
+   programs per job                  1
+   segments schedule                 
+-- Environment
+   python                            3.13.16 on Darwin arm64
+   packages                          numpy 2.5.4, scipy 1.18.1, pytket 2.18.5, qnexus 0.51.1, quantinuum-schemas 7.8.2, pytket-qiskit 0.79.0, matplotlib 3.11.2
+-- Outputs
+   file                              results/emulator2-smoke/emulator2_iid-seed900.npz
+   file                              results/emulator2-smoke/emulator2_iid-seed901.npz
+   file                              results/emulator2-smoke/summary.json
+   file                              results/emulator2-smoke/provenance.json
+==============================================================================
+[campaign emulator2-smoke] 2026-11-20 05:35:47 finished after 0 restarts
+[campaign emulator2-smoke] 2026-11-20 05:42:55 started (device reimei-E, options: --scenarios emulator2_iid --seeds 900 901 --rounds 1 --no-eval)
+round   1  noiseless accuracy, mean over the runs: QFedAvg=0.620  QFedFisher=0.580  QFedQGT=0.537  (0 s)
+emulator2_iid          seed 900  QFedAvg: device nan noiseless 0.407  QFedFisher: device nan noiseless 0.383  QFedQGT: device nan noiseless 0.340
+emulator2_iid          seed 901  QFedAvg: device nan noiseless 0.750  QFedFisher: device nan noiseless 0.735  QFedQGT: device nan noiseless 0.735
+==============================================================================
+RUN RECORD
+-- Program
+   task                              federated training of several runs in lockstep
+   entry point                       scripts/run_emulator.py
+   repository                        https://github.com/HarukiEmori/qfl-qgt
+   commit                            c927dd878e6c3f65ad29c84af960680836b3f3a2
+   working tree                      clean
+-- When
+   started                           2026-11-20T05:42:55-0800
+   finished                          2026-11-20T05:42:55-0800
+   duration                          0 s
+   jobs submitted from               2026-11-20T04:57:58-0800
+   last job completed                2026-11-20T05:35:47-0800
+-- Device
+   kind                              Quantinuum Nexus
+   project                           QFedQGT
+   device profiles                   reimei-E-x1, reimei-E-x400
+   cache                             results/emulator2-smoke/cache
+   jobs                              5 (5 read from the cache), 5 programs
+   devices of the jobs               reimei-E x1, reimei-E x400
+   commits that submitted the jobs   5abf5500ee
+   cost charged (HQC)                142.8
+   job identifiers                   6c54b56e-15b0-4729-b77e-d3fe32bcbb7c, c084545b-3a0c-40e0-bf17-21cec6dd3075, 0f0d4c3e-125f-4fe1-95d3-93a12394c2e4, b5bd49a8-4c88-46bb-a984-720b20f17bbd, ... (5 in total, all in the saved record)
+-- Usage
+   n circuits                        3584
+   n shots                           17056
+   n programs                        5
+   cost formula hqc                  149.851
+-- Parameters
+   scenarios                         emulator2_iid
+   seeds                             900, 901
+   methods                           QFedAvg, QFedFisher, QFedQGT
+   rounds                            1
+   batch                             8
+   echo shots                        5
+   eval shots                        100
+   eval inputs                       20
+   shots per circuit                 emulator2_iid: 1, 16
+   error rate multipliers            emulator2_iid: 1, 400
+   learning rates                    emulator2_iid: QFedAvg: 0.6, QFedFisher: 0.3, QFedQGT: 0.1
+   segments                          2448
+   programs per job                  1
+   segments schedule                 
+-- Environment
+   python                            3.13.16 on Darwin arm64
+   packages                          numpy 2.5.4, scipy 1.18.1, pytket 2.18.5, qnexus 0.51.1, quantinuum-schemas 7.8.2, pytket-qiskit 0.79.0, matplotlib 3.11.2
+-- Outputs
+   file                              results/emulator2-smoke/emulator2_iid-seed900.npz
+   file                              results/emulator2-smoke/emulator2_iid-seed901.npz
+   file                              results/emulator2-smoke/summary.json
+   file                              results/emulator2-smoke/provenance.json
+==============================================================================
+[campaign emulator2-smoke] 2026-11-20 05:42:55 finished after 0 restarts
