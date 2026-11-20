@@ -5,6 +5,7 @@
     python scripts/make_figures.py training            # accuracy and loss against the round
     python scripts/make_figures.py sweep               # final accuracy against the noise of the clients
     python scripts/make_figures.py emulator [dir ...]  # training on the emulator (default: every finished campaign)
+    python scripts/make_figures.py emulator2 [dir ...] # the two-class experiment on the emulator
     python scripts/make_figures.py table <dir> ...     # LaTeX rows of a results table
     python scripts/make_figures.py all
 
@@ -152,13 +153,17 @@ def sweep(scales=SWEEP, out="sweep.pdf", methods=("QFedAvg", "QFedFisher", "QFed
     print(f"wrote figures/{out}")
 
 
-EMULATOR_PANELS = (("emulator_iid", "(a) IID data"), ("emulator_dirichlet", "(b) Dirichlet partition"))
+# output file and range of the accuracy axis of the figure of every experiment on the emulator
+EMULATOR_FIGURES = {"four_class": dict(out="emulator.pdf", ylim=(0.15, 0.6)),
+                    "two_class": dict(out="emulator2.pdf", ylim=(0.4, 1.0))}
 
 
-def campaign_dirs() -> list:
-    """Finished campaigns of the emulator experiment (folders of ``results/`` with a summary)."""
-    from qfedqgt.scenarios import EMULATOR_CAMPAIGNS
-    return [d for d in EMULATOR_CAMPAIGNS if os.path.exists(os.path.join(ROOT, "results", d, "summary.json"))]
+def campaign_dirs(experiment: str = "four_class") -> list:
+    """Finished campaigns of an experiment on the emulator (folders of ``results/`` with a summary)."""
+    from qfedqgt import scenarios as S
+    on_emulator = set(S.EMULATOR_CAMPAIGNS) | set(S.EMULATOR2_CAMPAIGNS)
+    return [d for d, e in S.CAMPAIGN_EXPERIMENT.items() if e == experiment and d in on_emulator
+            and os.path.exists(os.path.join(ROOT, "results", d, "summary.json"))]
 
 
 def load_runs(directories, scenario: str) -> dict:
@@ -179,19 +184,29 @@ def load_runs(directories, scenario: str) -> dict:
     return {m: {k: np.array(v) for k, v in d.items()} for m, d in out.items()}
 
 
-def emulator(directories=None, out="emulator.pdf", methods=("QFedAvg", "QFedFisher", "QFedQGT")) -> None:
+def emulator(directories=None, out=None, methods=("QFedAvg", "QFedFisher", "QFedQGT"), experiment: str = "four_class") -> None:
     """Training on the emulator: accuracy of the global model against the round.
 
-    ``directories``: results folders of the campaigns (default: every finished campaign of
-    ``qfedqgt.scenarios.EMULATOR_CAMPAIGNS``).
+    ``directories``: results folders of the campaigns (default: every finished campaign of the experiment,
+    see ``qfedqgt.scenarios.CAMPAIGN_EXPERIMENT``).
 
     Lines: accuracy of the noiseless circuit with the parameters trained on the emulator (mean over the
     seeds, standard error as a band).  Markers: accuracy measured on the emulator for the models of the
-    last rounds (mean over the seeds, standard error as a bar).
+    last rounds (mean over the seeds, standard error as a bar).  An experiment with a single data
+    partition gets a second panel with the final accuracy of every seed measured on the emulator.
     """
-    fig, ax = plt.subplots(1, len(EMULATOR_PANELS), figsize=(3.3 * len(EMULATOR_PANELS), 2.7), squeeze=False, sharey=True)
-    for j, (scenario, title) in enumerate(EMULATOR_PANELS):
-        res = load_runs(directories or campaign_dirs(), scenario)
+    from qfedqgt import scenarios as S
+    spec = EMULATOR_FIGURES[experiment]
+    out = out or spec["out"]
+    scenarios = S.EMULATOR_EXPERIMENTS[experiment]["scenarios"]
+    seeds_panel = len(scenarios) == 1
+    n_panels = len(scenarios) + (1 if seeds_panel else 0)
+    letters = "abcdef"
+    fig, ax = plt.subplots(1, n_panels, figsize=(3.3 * n_panels, 2.7), squeeze=False, sharey=True)
+    for j, scenario in enumerate(scenarios):
+        sc = S.SCENARIOS[scenario]
+        title = f"({letters[j]}) " + ("IID data" if sc.alpha is None else "Dirichlet partition")
+        res = load_runs(directories or campaign_dirs(experiment), scenario)
         for m in methods:
             if m not in res:
                 continue
@@ -209,13 +224,35 @@ def emulator(directories=None, out="emulator.pdf", methods=("QFedAvg", "QFedFish
                 err = d.std(axis=0, ddof=1) / np.sqrt(d.shape[0]) if d.shape[0] > 1 else None
                 ax[0, j].errorbar(x, d.mean(axis=0), yerr=err, color=st["color"], marker=st["marker"], ms=3.5, ls="none",
                                   capsize=1.5, lw=0.8, mfc="white")
-        ax[0, j].axhline(0.25, color="0.6", lw=0.6, ls=":")
+        ax[0, j].axhline(1.0 / len(sc.classes), color="0.6", lw=0.6, ls=":")
         ax[0, j].set_xlabel("Communication round")
         ax[0, j].set_title(title, loc="left", fontsize=9)
         ax[0, j].xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(5))
+    if seeds_panel:
+        # final accuracy of every seed measured on the emulator (mean over the evaluated rounds)
+        res = load_runs(directories or campaign_dirs(experiment), scenarios[0])
+        axs = ax[0, -1]
+        present = [m for m in methods if m in res and "acc_device" in res[m] and np.asarray(res[m]["acc_device"]).size]
+        final = {m: np.asarray(res[m]["acc_device"], float).mean(axis=1) for m in present}
+        if present:
+            pos = np.arange(len(present))
+            stack = np.array([final[m] for m in present])                 # (methods, seeds)
+            axs.plot(pos, stack, color="0.8", lw=0.5, zorder=1)           # one thin line per seed
+            for i, m in enumerate(present):
+                st = STYLE[m]
+                axs.plot(np.full(stack.shape[1], pos[i]), final[m], ls="none", marker=st["marker"], ms=3.5,
+                         color=st["color"], mfc="white", zorder=2)
+                mean = final[m].mean()
+                se = final[m].std(ddof=1) / np.sqrt(len(final[m])) if len(final[m]) > 1 else 0.0
+                axs.errorbar(pos[i] + 0.22, mean, yerr=se, color=st["color"], marker="_", ms=10, capsize=2, lw=1.2, zorder=3)
+            axs.set_xticks(pos)
+            axs.set_xticklabels([STYLE[m]["label"] for m in present], fontsize=7)
+            axs.set_xlim(-0.5, len(present) - 0.3)
+        axs.axhline(1.0 / len(S.SCENARIOS[scenarios[0]].classes), color="0.6", lw=0.6, ls=":")
+        axs.set_title(f"({letters[len(scenarios)]}) Final accuracy of every seed", loc="left", fontsize=9)
     ax[0, 0].set_ylabel("Test accuracy")
-    ax[0, 0].legend(frameon=False, loc="upper left")
-    ax[0, 0].set_ylim(0.15, 0.6)
+    ax[0, 0].legend(frameon=False, loc="upper left" if experiment == "four_class" else "lower right")
+    ax[0, 0].set_ylim(*spec["ylim"])
     fig.tight_layout()
     os.makedirs(FIG, exist_ok=True)
     fig.savefig(os.path.join(FIG, out), metadata=PDF_METADATA)
@@ -252,9 +289,13 @@ if __name__ == "__main__":
         sweep()
     elif cmd == "emulator":
         emulator(sys.argv[2:] or None)
+    elif cmd == "emulator2":
+        emulator(sys.argv[2:] or None, experiment="two_class")
     elif cmd == "table":
         table(sys.argv[2:])
     elif cmd == "all":
         geometry(); training(); sweep()
         if campaign_dirs():
             emulator()
+        if campaign_dirs("two_class"):
+            emulator(experiment="two_class")

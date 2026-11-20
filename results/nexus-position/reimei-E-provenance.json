@@ -1,0 +1,96 @@
+{
+ "task": "survival of an echo circuit against its position in a packed program",
+ "entry": "scripts/nexus_position.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "a2346a281534ec20a07dd5ff650fb0abadb1b802",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x300"
+  ],
+  "cache": "results/nexus-position/cache-reimei-E"
+ },
+ "parameters": {
+  "scenario": "emulator_iid",
+  "layers": 1,
+  "circuits": 600,
+  "scales": [
+   1.0,
+   300.0
+  ],
+  "shots": [
+   60,
+   20
+  ],
+  "seed": 0
+ },
+ "started": "2026-11-20T03:31:45-0800",
+ "finished": "2026-11-20T03:58:29-0800",
+ "duration_s": 1604.7,
+ "jobs": [
+  {
+   "job_id": "862758cd-66df-4afe-ae5a-5b5e0068da75",
+   "name": "position-reimei-E-0001-reimei-E-x1-p1-c600-033148",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    60
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T03:32:00-0800",
+   "commit": "a2346a281534ec20a07dd5ff650fb0abadb1b802",
+   "modified": false,
+   "completed": "2026-11-20T03:58:27-0800",
+   "cost": 840.2,
+   "source": "submitted"
+  },
+  {
+   "job_id": "c49d2979-c35d-4898-b68d-cc9d4bdd33f3",
+   "name": "position-reimei-E-0002-reimei-E-x300-p1-c600-033200",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    20
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T03:32:12-0800",
+   "commit": "a2346a281534ec20a07dd5ff650fb0abadb1b802",
+   "modified": false,
+   "completed": "2026-11-20T03:58:29-0800",
+   "cost": 283.4,
+   "source": "submitted"
+  }
+ ],
+ "usage": {
+  "n_circuits": 1200,
+  "n_shots": 48000,
+  "n_programs": 2,
+  "cost_formula_hqc": 1200.4
+ },
+ "outputs": [
+  "results/nexus-position/reimei-E.json",
+  "results/nexus-position/reimei-E-provenance.json"
+ ],
+ "notes": []
+}

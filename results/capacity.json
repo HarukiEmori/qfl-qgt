@@ -88,5 +88,35 @@
   "train_accuracy": 0.61,
   "test_accuracy": 0.6375,
   "test_loss": 0.9710403414996186
+ },
+ {
+  "scenario": "emulator2_iid",
+  "seed": 0,
+  "n_params": 8,
+  "n_train": 200,
+  "steps": 150,
+  "train_accuracy": 1.0,
+  "test_accuracy": 0.995,
+  "test_loss": 0.19195032253611402
+ },
+ {
+  "scenario": "emulator2_iid",
+  "seed": 1,
+  "n_params": 8,
+  "n_train": 200,
+  "steps": 150,
+  "train_accuracy": 0.995,
+  "test_accuracy": 0.995,
+  "test_loss": 0.20393346624598369
+ },
+ {
+  "scenario": "emulator2_iid",
+  "seed": 2,
+  "n_params": 8,
+  "n_train": 200,
+  "steps": 150,
+  "train_accuracy": 0.995,
+  "test_accuracy": 0.99,
+  "test_loss": 0.20325418066224468
  }
 ]

@@ -14,7 +14,9 @@ every data partition,
     python scripts/emulator_summary.py                      # every finished campaign on the emulator
     python scripts/emulator_summary.py emulator-local       # other result folders of scripts/run_emulator.py
 
-Output: text, and ``results/emulator-summary.json`` when the campaigns on the emulator are summarized.
+Without arguments the script summarizes every experiment on the emulator that has a finished campaign
+(``EMULATOR_EXPERIMENTS`` in ``qfedqgt/scenarios.py``).  Output: text, ``results/emulator-summary.json`` for
+the four-class experiment, and ``results/emulator2-summary.json`` for the two-class experiment.
 """
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ sys.path.insert(0, ROOT)
 
 from qfedqgt import scenarios as S          # noqa: E402
 
-PARTITIONS = (("emulator_iid", "IID data"), ("emulator_dirichlet", "Dirichlet partition"))
+SUMMARY_FILES = {"four_class": "emulator-summary.json", "two_class": "emulator2-summary.json"}
 KEYS = (("device", "accuracy_device"), ("noiseless", "accuracy_noiseless"))
 
 
@@ -43,6 +45,16 @@ def load(directories) -> list:
             r["campaign"] = d
             runs.append(r)
     return runs
+
+
+def partitions(runs) -> list:
+    """(scenario, title) of the data partitions, in the order in which they occur in the runs."""
+    seen = {}
+    for r in runs:
+        if r["scenario"] not in seen:
+            alpha = r.get("scenario_definition", {}).get("alpha")
+            seen[r["scenario"]] = "IID data" if alpha is None else "Dirichlet partition"
+    return list(seen.items())
 
 
 def mean_se(x) -> tuple:
@@ -71,7 +83,7 @@ def summarize(directories) -> dict:
     methods = [m for m in ("QFedAvg", "QFedFisher", "QFedQGT") if m in runs[0]["final"]]
     baselines = [m for m in methods if m != "QFedQGT"]
     out = dict(campaigns=list(directories), partitions={}, both_partitions={})
-    for scenario, title in PARTITIONS:
+    for scenario, title in partitions(runs):
         sub = sorted([r for r in runs if r["scenario"] == scenario], key=lambda r: r["seed"])
         if not sub:
             continue
@@ -116,16 +128,24 @@ def summarize(directories) -> dict:
 
 def main(argv=None) -> None:
     args = list(sys.argv[1:] if argv is None else argv)
-    on_emulator = not args
-    directories = args or [d for d in S.EMULATOR_CAMPAIGNS if os.path.exists(os.path.join(ROOT, "results", d, "summary.json"))]
-    if not directories:
-        raise SystemExit("no finished campaign in results/")
-    out = summarize(directories)
-    if on_emulator:
-        path = os.path.join(ROOT, "results", "emulator-summary.json")
-        with open(path, "w") as f:
+    if args:
+        summarize(args)
+        return
+    found = False
+    for experiment, file_name in SUMMARY_FILES.items():
+        directories = [d for d, e in S.CAMPAIGN_EXPERIMENT.items()
+                       if e == experiment and (d in S.EMULATOR_CAMPAIGNS or d in S.EMULATOR2_CAMPAIGNS)
+                       and os.path.exists(os.path.join(ROOT, "results", d, "summary.json"))]
+        if not directories:
+            continue
+        found = True
+        print(f"=== experiment {experiment}: {', '.join(directories)}")
+        out = summarize(directories)
+        with open(os.path.join(ROOT, "results", file_name), "w") as f:
             json.dump(out, f, indent=1)
-        print("wrote results/emulator-summary.json")
+        print(f"wrote results/{file_name}")
+    if not found:
+        raise SystemExit("no finished campaign in results/")
 
 
 if __name__ == "__main__":

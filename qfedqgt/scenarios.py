@@ -78,6 +78,37 @@ EMULATOR_EVAL_INPUTS = 60      # test images of the evaluation on the emulator (
 
 
 
+# --------------------------------------------------------------------------- two-class experiment on the emulator
+# The first experiment on the emulator has four classes and a one-layer circuit, whose noiseless accuracy on
+# that task is about 0.72, so that all accuracies are low.  The second experiment uses the two-class task of the
+# simulations, which the one-layer circuit solves (0.99 without noise).  Its design was chosen in the local
+# gate-level model before any run on the emulator (scripts/emulator_design.py, results/emulator-design/):
+# two reference clients with 5 shots per circuit, six clients with 300-fold error rates and one shot,
+# eight images per client and round, 15 rounds, IID data, 16 seeds.  The final models are evaluated on the
+# emulator with 100 shots per image, each of the last five rounds on its own block of 20 test images.
+EMULATOR2_SHOTS_REFERENCE, EMULATOR2_NOISY_CLIENTS, EMULATOR2_BATCH = 5, 6, 8
+_EMU2 = dict(classes=(0, 1), n_qubits=4, layers=1, beta=4.0, angle_scale=0.5, n_per_client=40,
+             n_train_per_class=400, n_test_per_class=100,
+             gate_scales=(1.0,) * 2 + (EMU_SCALE,) * EMULATOR2_NOISY_CLIENTS,
+             local_scales=(1.0,) * 2 + (EMU_LOCAL_SCALE,) * EMULATOR2_NOISY_CLIENTS,
+             shots=(EMULATOR2_SHOTS_REFERENCE,) * 2 + (1,) * EMULATOR2_NOISY_CLIENTS)
+SCENARIOS["emulator2_iid"] = Scenario(name="emulator2_iid", **_EMU2)
+EMULATOR2_SCENARIOS = ("emulator2_iid",)
+# The same task on fewer qubits: circuits of candidate designs, used for echo measurements on the emulator
+# (scripts/nexus_geometry.py --scenario calibration_n2) and for comparisons in the local model.
+SCENARIOS["calibration_n2"] = Scenario(name="calibration_n2", **{**_EMU2, "n_qubits": 2})
+SCENARIOS["calibration_n3"] = Scenario(name="calibration_n3", **{**_EMU2, "n_qubits": 3})
+CALIBRATION_SCENARIOS = ("calibration_n2", "calibration_n3")
+EMULATOR2_RUN = RunConfig(rounds=15, batch=EMULATOR2_BATCH, local_steps=1, echo_shots=5, eval_shots=100, eval_every=1)
+EMULATOR2_SEEDS = tuple(range(16))
+# candidates of the design study (scripts/emulator_design.py):
+# (reference clients, noisy clients, minibatch, shots of the reference clients, Dirichlet parameter or None)
+EMULATOR2_DESIGN_CANDIDATES = (
+    (2, 2, 8, 5, None), (2, 4, 8, 5, None), (2, 6, 8, 5, None), (2, 10, 8, 5, None),
+    (2, 6, 8, 10, None), (2, 6, 4, 10, None), (2, 6, 4, 5, None),
+    (2, 6, 8, 5, 0.5), (2, 6, 8, 5, 1.0), (2, 6, 8, 5, 2.0), (2, 6, 8, 5, 5.0),
+)
+
 # Every experiment on the emulator: its scenarios, run configuration, number of final rounds of the reported
 # accuracy, and number of test images of the evaluation on the emulator.
 # ``eval_inputs`` is the number of test images of one evaluated round; with ``eval_rotate`` every evaluated round
@@ -85,9 +116,14 @@ EMULATOR_EVAL_INPUTS = 60      # test images of the evaluation on the emulator (
 EMULATOR_EXPERIMENTS = {
     "four_class": dict(scenarios=EMULATOR_SCENARIOS, run=EMULATOR_RUN, tail=EMULATOR_TAIL, eval_inputs=EMULATOR_EVAL_INPUTS,
                        eval_rotate=False, segments=EMULATOR_SEGMENTS, programs_per_job=EMULATOR_PROGRAMS_PER_JOB),
+    "two_class": dict(scenarios=EMULATOR2_SCENARIOS, run=EMULATOR2_RUN, tail=5, eval_inputs=20,
+                      eval_rotate=True, segments=1224, programs_per_job=1),
 }
 # experiment of every campaign folder (results/<name>), on the emulator and in the local model
-CAMPAIGN_EXPERIMENT = {**{name: "four_class" for name in EMULATOR_CAMPAIGNS}, **{name: "four_class" for name in EMULATOR_LOCAL}}
+EMULATOR2_CAMPAIGNS = {"emulator2-reimei-E": EMULATOR2_SEEDS}       # on the emulator
+EMULATOR2_LOCAL = {"emulator2-local": EMULATOR2_SEEDS}              # the same runs in the local model
+CAMPAIGN_EXPERIMENT = {**{name: "four_class" for name in EMULATOR_CAMPAIGNS}, **{name: "four_class" for name in EMULATOR_LOCAL},
+                       **{name: "two_class" for name in EMULATOR2_CAMPAIGNS}, **{name: "two_class" for name in EMULATOR2_LOCAL}}
 
 
 def _experiment_of(scenario: str) -> dict | None:
@@ -115,7 +151,10 @@ def campaign_scenarios(name: str) -> tuple:
 
 def campaign_seeds(name: str) -> tuple:
     """Seeds of the campaign folder ``name`` (those of the first campaign for unknown names)."""
-    return tuple(EMULATOR_CAMPAIGNS.get(name, EMULATOR_LOCAL.get(name, EMULATOR_SEEDS)))
+    for table in (EMULATOR_CAMPAIGNS, EMULATOR_LOCAL, EMULATOR2_CAMPAIGNS, EMULATOR2_LOCAL):
+        if name in table:
+            return tuple(table[name])
+    return tuple(EMULATOR_SEEDS)
 
 
 def run_config(scenario: str) -> RunConfig:
@@ -137,8 +176,8 @@ def eval_inputs(scenario: str) -> int:
 
 def simulation_scenarios() -> tuple:
     """Scenarios of the simulations with the gate-level model (all scenarios outside the emulator experiments)."""
-    emu = emulator_scenarios()
-    return tuple(k for k in SCENARIOS if k not in emu)
+    other = emulator_scenarios() + CALIBRATION_SCENARIOS
+    return tuple(k for k in SCENARIOS if k not in other)
 
 # step-size grids of scripts/run_campaign.py (stage "tune")
 GRID_EUCLID = (0.15, 0.3, 0.6, 1.0, 2.0, 4.0)        # plain-gradient methods
