@@ -160,6 +160,11 @@ A request to Nexus that does not return (for example after the computer slept) e
 puts a laptop to sleep, and the campaign then continues after the computer wakes up.  The output is appended to
 `results/<name>/campaign.log`.
 
+To stop a campaign, end the script and the client (`kill $(cat results/<name>/campaign.pid)`, then the process of
+`run_emulator.py`).  The jobs of the current round that are already submitted still run on the emulator unless they
+are cancelled in the web interface of Nexus.  A cancelled job, or programs whose jobs failed three times, end the
+client with the exit status 76, and the script does not restart it; the same command continues the campaign later.
+
 | Result | Content |
 | :-- | :-- |
 | `results/nexus-geometry/reimei-E.json`, `reimei-E-emulator_iid.json` | Frequency of the all-zero outcome of echo circuits for several error-rate multipliers, the inferred noise strength, and the multiplier at which the local gate-level model has the same frequency |

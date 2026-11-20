@@ -8,6 +8,8 @@
 # the end (a lost connection, a sleep of the computer, an error of the service).  Every start reads
 # the finished rounds from the cache and re-attaches to the jobs that are already submitted, so that
 # nothing is submitted twice.  The output is appended to results/<name>/campaign.log.
+# The script does not restart a run that ended because a job was cancelled (for example in the web
+# interface of Nexus) or because the same programs failed three times (exit status 76).
 #
 # Environment variables
 #     PYTHON        interpreter (default: python)
@@ -54,6 +56,10 @@ while true; do
   if [ "$status" -eq 0 ]; then
     say "finished after $n restarts"
     exit 0
+  fi
+  if [ "$status" -eq 76 ]; then
+    say "stopped for good: a job was cancelled or its programs failed repeatedly (exit status 76); not restarted"
+    exit 1
   fi
   n=$((n + 1))
   if [ "$n" -gt "$MAX_RETRIES" ]; then

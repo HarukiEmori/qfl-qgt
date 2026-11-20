@@ -19,7 +19,9 @@ Backends
 
 The seeds of the two campaigns are listed in ``qfedqgt/scenarios.py`` (``EMULATOR_CAMPAIGNS``).
 The run is resumable: finished jobs are read from the cache and unfinished jobs are re-attached, so
-the same command continues an interrupted campaign.  Output in ``results/<name>/``: one ``.npz`` per
+the same command continues an interrupted campaign.  A job that was cancelled, or programs whose jobs failed
+three times, end the run with the exit status 76, and ``scripts/emulator_campaign.sh`` then does not
+start it again.  Output in ``results/<name>/``: one ``.npz`` per
 run, ``summary.json``, the job log and the shot tables (``cache/``), and the run record
 ``provenance.json`` (which program, when, on which device; shown when the script ends).
 """
@@ -265,5 +267,21 @@ def main(argv=None) -> None:
                   + ("" if n_same == len(outcomes) else f" ({len(outcomes) - n_same} written or different)"), flush=True)
 
 
+def cli(argv=None) -> None:
+    """``main`` with the exit status of a run that must not be started again automatically.
+
+    A cancelled job, or programs whose jobs failed repeatedly, raise ``NexusJobFatal``; the process then
+    ends with ``FATAL_EXIT_STATUS`` and ``scripts/emulator_campaign.sh`` does not restart the campaign.
+    """
+    try:
+        main(argv)
+    except RuntimeError as exc:
+        if type(exc).__name__ != "NexusJobFatal":
+            raise
+        from qfedqgt.nexus import FATAL_EXIT_STATUS
+        print(f"STOPPED FOR GOOD: {exc}", flush=True)
+        sys.exit(FATAL_EXIT_STATUS)
+
+
 if __name__ == "__main__":
-    main()
+    cli()

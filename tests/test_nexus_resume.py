@@ -39,6 +39,7 @@ class FakeQnx(types.ModuleType):
         self.store = {}            # job id -> job
         self.started, self.fetched, self.configs = [], [], []
         self.broken = set()        # ids of jobs that end in an error
+        self.default_state = "COMPLETED"   # final status of the jobs that are not in ``broken``
         self.offline = False       # the service does not answer
         fake = self
 
@@ -62,7 +63,7 @@ class FakeQnx(types.ModuleType):
             def status(job):
                 if fake.offline:
                     raise ConnectionError("no route to host")
-                state = "ERROR" if str(job.id) in fake.broken else "COMPLETED"
+                state = "ERROR" if str(job.id) in fake.broken else fake.default_state
                 return types.SimpleNamespace(status=f"JobStatusEnum.{state}")
 
             @staticmethod
@@ -302,6 +303,80 @@ def test_unreachable_service_keeps_the_jobs_reattachable(tmp_path, monkeypatch):
     _, reqs3 = _requests(device)
     ex3.run(reqs3)
     assert len(fake.started) == 1 and reqs3[0].counts.shape == (1, 3, t.dim)
+
+
+def test_programs_that_fail_repeatedly_stop_the_run_for_good(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, NexusJobFatal
+
+    device = DeviceProfile("reimei-E", 200.0)
+    cache = str(tmp_path / "cache")
+    fake.default_state = "ERROR"                       # every job of these programs ends in an error
+    kinds = []
+    for attempt in range(3):
+        ex = NexusExecutor("test", cache, segments=2, max_job_failures=3)
+        _, reqs = _requests(device)
+        with pytest.raises(RuntimeError) as info:
+            ex.run(reqs)
+        kinds.append(type(info.value).__name__)
+    # the first two failures allow another submission, the third one does not
+    assert kinds == ["RuntimeError", "RuntimeError", "NexusJobFatal"] and len(fake.started) == 3
+    assert issubclass(NexusJobFatal, RuntimeError)
+    # other programs are not affected by the failures of these programs
+    fake.default_state = "COMPLETED"
+    ex = NexusExecutor("test", cache, segments=2, max_job_failures=3)
+    _, other = _requests(DeviceProfile("reimei-E", 210.0))
+    ex.run(other)
+    assert other[0].counts.shape[1] == 3
+
+
+def test_a_cancelled_job_stops_the_run_for_good(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, NexusJobFatal
+
+    for state in ("CANCELLED", "TERMINATED", "DEPLETED"):
+        fake.default_state = state
+        ex = NexusExecutor("test", str(tmp_path / state), segments=2)
+        _, reqs = _requests(DeviceProfile("reimei-E", 220.0))
+        with pytest.raises(NexusJobFatal):
+            ex.run(reqs)                                # the first cancelled job already ends the run
+    assert len(fake.started) == 3
+
+
+def test_fatal_stop_has_its_own_exit_status():
+    from qfedqgt.nexus import FATAL_EXIT_STATUS, STALL_EXIT_STATUS
+
+    assert FATAL_EXIT_STATUS == 76 and FATAL_EXIT_STATUS != STALL_EXIT_STATUS
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    script = open(os.path.join(root, "scripts", "emulator_campaign.sh")).read()
+    # the restart loop of the campaign script ends on this status instead of starting the run again
+    assert '"$status" -eq 76' in script and script.index('"$status" -eq 76') < script.index("restart $n in")
+
+
+def test_runner_turns_a_fatal_stop_into_its_exit_status(monkeypatch):
+    import importlib.util
+    from qfedqgt.nexus import FATAL_EXIT_STATUS, NexusJobFatal
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    spec = importlib.util.spec_from_file_location("run_emulator_cli", os.path.join(root, "scripts", "run_emulator.py"))
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+
+    def cancelled(argv=None):
+        raise NexusJobFatal("job x was ended with the status CANCELLED")
+
+    def broken(argv=None):
+        raise RuntimeError("job x ended with status ERROR")
+
+    monkeypatch.setattr(runner, "main", cancelled)
+    with pytest.raises(SystemExit) as info:
+        runner.cli([])
+    assert info.value.code == FATAL_EXIT_STATUS
+    monkeypatch.setattr(runner, "main", broken)       # an ordinary failure keeps its exception: the campaign restarts
+    with pytest.raises(RuntimeError):
+        runner.cli([])
 
 
 def test_stall_guard_ends_a_process_whose_request_does_not_return(tmp_path):

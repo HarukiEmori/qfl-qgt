@@ -32,6 +32,7 @@ import numpy as np
 from . import provenance, sim
 
 __all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor", "NexusUnreachable",
+           "NexusJobFatal", "FATAL_EXIT_STATUS",
            "STALL_EXIT_STATUS", "login_status"]
 
 STALL_EXIT_STATUS = 75     # exit status of a process that the stall guard of NexusExecutor ended
@@ -39,6 +40,21 @@ STALL_EXIT_STATUS = 75     # exit status of a process that the stall guard of Ne
 
 class NexusUnreachable(RuntimeError):
     """Nexus did not answer.  The submitted jobs are not affected, and a later run re-attaches to them."""
+
+
+FATAL_EXIT_STATUS = 76      # exit status of a run that must not be started again automatically
+_ENDED_ON_PURPOSE = ("CANCELLED", "CANCELLING", "TERMINATED", "DEPLETED")
+
+
+class NexusJobFatal(RuntimeError):
+    """A job was ended on purpose, or the same programs failed repeatedly.
+
+    A job with the status cancelled, terminated or depleted was stopped by the user or by the
+    service, and programs that fail again and again will keep failing.  Submitting them once more
+    would override the cancellation or spend credits for nothing, so a caller such as
+    ``scripts/emulator_campaign.sh`` must not start the run again automatically (exit status
+    ``FATAL_EXIT_STATUS``).
+    """
 
 
 def login_status() -> str:
@@ -278,8 +294,10 @@ class NexusExecutor(_ProgramExecutor):
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
                  io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90,
-                 segments_schedule=(), cached_only: bool = False, stall_timeout: float | None = None):
+                 segments_schedule=(), cached_only: bool = False, stall_timeout: float | None = None,
+                 max_job_failures: int = 3):
         super().__init__(segments, segments_schedule)
+        self.max_job_failures = max_job_failures    # failed jobs of the same program before the run stops for good
         self.stall_timeout = stall_timeout          # seconds after which a request without answer ends the process
         self._active, self._active_lock, self._guard = {}, threading.Lock(), None
         self.cached_only = cached_only              # never submit: fail if a result is not in the cache
@@ -384,8 +402,10 @@ class NexusExecutor(_ProgramExecutor):
                 state = "UNKNOWN"
             if state == "COMPLETED":
                 return
-            if state in ("ERROR", "CANCELLED", "CANCELLING", "TERMINATED", "DEPLETED"):
-                raise RuntimeError(f"job {name} ended with status {state}")
+            if state == "ERROR" or state in _ENDED_ON_PURPOSE:
+                err = RuntimeError(f"job {name} ended with status {state}")
+                err.state = state
+                raise err
             if self.timeout is not None and time.time() - t0 > self.timeout:
                 raise TimeoutError(f"job {name} not completed after {self.timeout:.0f} s (status {state})")
             time.sleep(self.poll_interval)
@@ -440,6 +460,25 @@ class NexusExecutor(_ProgramExecutor):
                 for key, ref_id in zip(rec["keys"], rec["ref_ids"]):
                     out[key] = (job_id, ref_id, rec["name"])
         return out
+
+    def _failures(self, keys) -> int:
+        """Largest number of failed jobs recorded in ``jobs.jsonl`` for any of the programs ``keys``."""
+        path = os.path.join(self.cache_dir, "jobs.jsonl")
+        if not os.path.exists(path):
+            return 0
+        submitted, count = {}, {}
+        with open(path) as f:
+            for line in f:
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if rec.get("event") == "submitted" and "keys" in rec:
+                    submitted[rec["job_id"]] = rec["keys"]
+                elif rec.get("event") == "failed":
+                    for key in submitted.get(rec.get("job_id"), ()):
+                        count[key] = count.get(key, 0) + 1
+        return max((count.get(k, 0) for k in keys), default=0)
 
     def _job_index(self) -> tuple:
         """({job id: merged log record}, {cache key: job id}) from ``jobs.jsonl``."""
@@ -554,6 +593,14 @@ class NexusExecutor(_ProgramExecutor):
                 # instead of re-attaching to it
                 self._log(dict(event="failed", name=item["name"], job_id=str(item["job"].id),
                                error=repr(exc)[:300], time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
+                state = getattr(exc, "state", None)
+                if state in _ENDED_ON_PURPOSE:
+                    raise NexusJobFatal(f"job {item['name']} was ended with the status {state}; "
+                                        "its programs are not submitted again automatically") from exc
+                failures = self._failures([handle["keys"][j] for j in item["part"]])
+                if failures >= self.max_job_failures:
+                    raise NexusJobFatal(f"the programs of job {item['name']} failed {failures} times ({exc}); "
+                                        "they are not submitted again automatically") from exc
                 raise
             with self._request(f"results of {item['name']}"):
                 by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
