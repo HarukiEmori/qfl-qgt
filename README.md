@@ -32,6 +32,7 @@ figures and tables.
 | `scripts/run_emulator.py` | Federated training on the emulator: several scenarios and seeds in lockstep, final evaluation on the device |
 | `scripts/emulator_campaign.sh` | Runs a campaign of `run_emulator.py` until it has finished and restarts it after an interruption |
 | `scripts/emulator_status.py` | Progress of a campaign (rounds, jobs, cost), read from its results folder |
+| `scripts/emulator_precheck.py`, `scripts/emulator_campaign_after_precheck.sh` | Tests of a short pre-check run on the emulator (jobs completed, finite results, expected noise strengths), and a script that starts a campaign only after these tests pass |
 | `scripts/emulator_design.py` | Candidate designs of the two-class emulator experiment, compared in the local model before the runs |
 | `scripts/emulator_summary.py` | Final accuracies and paired differences of the emulator experiments |
 | `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
@@ -148,7 +149,10 @@ measurements of the same circuit on the emulator (`results/nexus-geometry/reimei
 **Running a campaign.**  A campaign needs one submission per round, so a process has to stay alive for hours:
 
 ```bash
-PYTHON=python scripts/emulator_campaign.sh emulator2-reimei-E      # runs until the campaign has finished
+# one round of two runs with other seeds, tests of their results, and then the campaign
+PYTHON=python scripts/emulator_campaign_after_precheck.sh emulator2-smoke emulator2-reimei-E \
+    --scenarios emulator2_iid --seeds 900 901 --rounds 1 --no-eval
+PYTHON=python scripts/emulator_campaign.sh emulator2-reimei-E      # the campaign alone; continues it after a stop
 python scripts/emulator_status.py --name emulator2-reimei-E        # progress: rounds, jobs, recorded cost
 python scripts/emulator_status.py --name emulator2-reimei-E --nexus   # also asks Nexus for the open jobs
 ```

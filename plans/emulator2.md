@@ -30,11 +30,13 @@ that experiment are between 0.27 and 0.42.  The second experiment uses the two-c
 | Seeds on the emulator | 0 to 15 (16 seeds), all in one campaign |
 | Evaluation on the emulator | the models of the last 5 rounds, each on its own class-balanced block of 20 test images, 100 shots per image, reference error parameters |
 
-The scenario is `emulator2_iid` in `qfedqgt/scenarios.py`; the command is
+The scenario is `emulator2_iid` in `qfedqgt/scenarios.py`; the command of the campaign is
 
 ```bash
 PYTHON=python scripts/emulator_campaign.sh emulator2-reimei-E
 ```
+
+It is started after a pre-check on the emulator (see below).
 
 ## How the design was chosen
 
@@ -133,9 +135,21 @@ QFedFisher, as stated above.
 
 ## Pre-check on the emulator
 
-Before the campaign, one round of two runs with other seeds (900 and 901; folder
-`results/emulator2-smoke/`) is executed on the emulator to check that programs with 2,448 two-qubit
-circuits are accepted and that the results are decoded.  These runs are not part of the experiment.
+The campaign is started by `scripts/emulator_campaign_after_precheck.sh`.  It first completes one round of
+two runs with other seeds (900 and 901; folder `results/emulator2-smoke/`), which use the circuits, the
+programs and the devices of the experiment, and tests their results with `scripts/emulator_precheck.py`:
+every job completed, finite results, and the noise strengths estimated from the echo circuits as expected
+(at most 0.1 on average for the reference clients, and within 0.2 of the echo measurement 0.71 for the
+noisy clients).  The campaign starts only if these tests pass.  The runs of the pre-check are not part of
+the experiment, and their accuracies are not used.
+
+```bash
+PYTHON=python scripts/emulator_campaign_after_precheck.sh emulator2-smoke emulator2-reimei-E \
+    --scenarios emulator2_iid --seeds 900 901 --rounds 1 --no-eval
+```
+
+A job that is cancelled, or programs whose jobs fail three times, stop the campaign for good
+(`scripts/emulator_campaign.sh`); the same command continues it later.
 
 ## Optional second condition (not run unless decided separately)
 
