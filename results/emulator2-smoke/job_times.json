@@ -1,0 +1,104 @@
+{
+ "campaign": "emulator2-smoke",
+ "summary": {
+  "jobs": 5,
+  "steps": 1,
+  "wait_minutes": {
+   "min": 31.66091661666667,
+   "median": 34.86105765,
+   "max": 36.006039816666664
+  },
+  "run_minutes": {
+   "min": 0.08558548333333334,
+   "median": 0.14194508333333333,
+   "max": 1.2484986999999999
+  }
+ },
+ "steps": [
+  {
+   "step": 1,
+   "jobs": 5,
+   "programs": 5,
+   "start": "2026-11-20T12:57:58+00:00",
+   "end": "2026-11-20T13:35:37+00:00",
+   "minutes": 37.6
+  }
+ ],
+ "jobs": [
+  {
+   "name": "emulator2-smoke-0001-reimei-E-x1-p2-c896-045753",
+   "job_id": "6c54b56e-15b0-4729-b77e-d3fe32bcbb7c",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "programs": 1,
+   "circuit_shots": 13824,
+   "status": "COMPLETED",
+   "submitted": "2026-11-20T12:57:58+00:00",
+   "queued": "2026-11-20T12:58:54+00:00",
+   "running": "2026-11-20T13:33:32+00:00",
+   "completed": "2026-11-20T13:34:47+00:00",
+   "wait_s": 2078.323586,
+   "run_s": 74.909922
+  },
+  {
+   "name": "emulator2-smoke-0002-reimei-E-x1-p2-c896-045758",
+   "job_id": "c084545b-3a0c-40e0-bf17-21cec6dd3075",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "programs": 1,
+   "circuit_shots": 160,
+   "status": "COMPLETED",
+   "submitted": "2026-11-20T12:57:59+00:00",
+   "queued": "2026-11-20T12:58:27+00:00",
+   "running": "2026-11-20T13:33:19+00:00",
+   "completed": "2026-11-20T13:33:24+00:00",
+   "wait_s": 2091.663459,
+   "run_s": 5.304061
+  },
+  {
+   "name": "emulator2-smoke-0003-reimei-E-x400-p3-c2688-045759",
+   "job_id": "0f0d4c3e-125f-4fe1-95d3-93a12394c2e4",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "programs": 1,
+   "circuit_shots": 2448,
+   "status": "COMPLETED",
+   "submitted": "2026-11-20T12:58:36+00:00",
+   "queued": "2026-11-20T13:03:34+00:00",
+   "running": "2026-11-20T13:35:14+00:00",
+   "completed": "2026-11-20T13:35:37+00:00",
+   "wait_s": 1899.654997,
+   "run_s": 22.634088
+  },
+  {
+   "name": "emulator2-smoke-0004-reimei-E-x400-p3-c2688-045836",
+   "job_id": "b5bd49a8-4c88-46bb-a984-720b20f17bbd",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "programs": 1,
+   "circuit_shots": 144,
+   "status": "COMPLETED",
+   "submitted": "2026-11-20T12:58:37+00:00",
+   "queued": "2026-11-20T12:58:54+00:00",
+   "running": "2026-11-20T13:34:48+00:00",
+   "completed": "2026-11-20T13:34:54+00:00",
+   "wait_s": 2154.406756,
+   "run_s": 5.135129
+  },
+  {
+   "name": "emulator2-smoke-0005-reimei-E-x400-p3-c2688-045837",
+   "job_id": "246136e4-e02d-4599-b264-6619d4eb1f8a",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "programs": 1,
+   "circuit_shots": 480,
+   "status": "COMPLETED",
+   "submitted": "2026-11-20T12:58:38+00:00",
+   "queued": "2026-11-20T12:58:57+00:00",
+   "running": "2026-11-20T13:34:57+00:00",
+   "completed": "2026-11-20T13:35:06+00:00",
+   "wait_s": 2160.362389,
+   "run_s": 8.516705
+  }
+ ]
+}
