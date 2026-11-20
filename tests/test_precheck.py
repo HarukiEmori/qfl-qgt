@@ -20,9 +20,16 @@ def _folder(tmp_path, noisy=0.7, reference=0.01, failed=0, open_jobs=0, nan=Fals
     for seed in (900, 901):
         runs.append(dict(scenario="emulator2_iid", seed=seed, scenario_definition=dict(n_qubits=2, gate_scales=scales),
                          run=dict(p_max=0.9)))
-        acc = np.array([0.5, np.nan if nan else 0.6])
-        np.savez(out / f"emulator2_iid-seed{seed}.npz", **{"QFedQGT/p_hat": np.array([[reference, reference, noisy, noisy]]),
-                                                         "QFedQGT/acc_exact": acc})
+        arrays = {}
+        for m in ("QFedAvg", "QFedQGT"):
+            arrays.update({f"{m}/acc_exact": np.array([0.5, np.nan if nan else 0.6]), f"{m}/loss_exact": np.array([0.7, 0.6]),
+                           f"{m}/theta": np.zeros((2, 4)), f"{m}/train_loss": np.array([0.7]), f"{m}/weights": np.full((1, 4), 0.25),
+                           # undefined by design: heterogeneity of the first round, accuracy on the device per round
+                           f"{m}/zeta2": np.array([np.nan]), f"{m}/acc_shots": np.array([np.nan, np.nan])})
+        arrays["QFedAvg/p_hat"] = np.full((1, 4), np.nan)              # a method that does not estimate the noise strength
+        arrays.update({"QFedQGT/p_hat": np.array([[reference, reference, noisy, noisy]]),
+                       "QFedQGT/kappa_hat": np.ones((1, 4)), "QFedQGT/sigma2": np.ones((1, 4))})
+        np.savez(out / f"emulator2_iid-seed{seed}.npz", **arrays)
     (out / "summary.json").write_text(json.dumps(dict(device="reimei-E", runs=runs)))
     events = [dict(event="submitted", job_id=str(i)) for i in range(3 + open_jobs)]
     events += [dict(event="completed", job_id=str(i), cost=10.0) for i in range(3)]
@@ -105,3 +112,20 @@ def test_campaign_starts_only_after_a_passed_pre_check(tmp_path):
     status, calls = _drive(folder)
     assert status == 1 and calls == ["campaign pre --seeds 900 --rounds 1"]
     assert (folder / "results" / "pre" / "precheck.failed").exists()
+
+
+def test_multiplier_check_changes_only_the_local_multiplier_of_the_noisy_clients():
+    spec3 = importlib.util.spec_from_file_location("emulator_multiplier_check", os.path.join(ROOT, "scripts", "emulator_multiplier_check.py"))
+    check = importlib.util.module_from_spec(spec3)
+    spec3.loader.exec_module(check)
+    from qfedqgt import scenarios as S
+
+    ref = S.SCENARIOS["emulator2_iid"]
+    sc = check.scenario_with(430.0)
+    assert sc.local_scales == (1.0, 1.0) + (430.0,) * 6 and sc.gate_scales == ref.gate_scales and sc.shots == ref.shots
+    path = os.path.join(ROOT, "results", "emulator-design", "multiplier-sensitivity.json")
+    if os.path.exists(path):          # the stored result: the step sizes of the experiment are selected at every multiplier
+        with open(path) as f:
+            stored = json.load(f)
+        assert all(row["same_as_experiment"] for row in stored["multipliers"])
+        assert stored["step_sizes_of_the_experiment"] == {m: S.learning_rates("emulator2_iid")[m] for m in check.METHODS}

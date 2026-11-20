@@ -1,0 +1,188 @@
+{
+ "scenario": "emulator2_iid",
+ "step_sizes_of_the_experiment": {
+  "QFedAvg": 0.6,
+  "QFedFisher": 0.3,
+  "QFedQGT": 0.1
+ },
+ "tuning_seeds": [
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  106,
+  107,
+  108,
+  109,
+  110,
+  111,
+  112,
+  113,
+  114,
+  115,
+  116,
+  117,
+  118,
+  119,
+  120,
+  121,
+  122,
+  123,
+  124,
+  125,
+  126,
+  127,
+  128,
+  129,
+  130,
+  131
+ ],
+ "report_seeds": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15
+ ],
+ "precheck_echo": {
+  "run": "emulator2-smoke",
+  "seeds": [
+   900,
+   901
+  ],
+  "circuits": 96,
+  "samples": 480,
+  "frequency": 0.3875,
+  "standard_error": 0.022236594744549656,
+  "matched_multiplier": 425.82439458929,
+  "matched_multiplier_range": [
+   399.3750677909702,
+   454.77902074344456
+  ],
+  "model_probability": {
+   "430": 0.3841585110859902,
+   "460": 0.36148417526452864,
+   "490": 0.3411087169595872,
+   "540": 0.3121039149001139
+  }
+ },
+ "multipliers": [
+  {
+   "multiplier": 430.0,
+   "selected_step_sizes": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "same_as_experiment": true,
+   "accuracy": {
+    "QFedAvg": 0.7865,
+    "QFedFisher": 0.793625,
+    "QFedQGT": 0.93675
+   },
+   "difference": {
+    "QFedAvg": {
+     "mean": 15.024999999999995,
+     "se": 2.4228340842905443,
+     "higher": 16
+    },
+    "QFedFisher": {
+     "mean": 14.312499999999993,
+     "se": 3.3707303239308044,
+     "higher": 14
+    }
+   }
+  },
+  {
+   "multiplier": 460.0,
+   "selected_step_sizes": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "same_as_experiment": true,
+   "accuracy": {
+    "QFedAvg": 0.7975625,
+    "QFedFisher": 0.752625,
+    "QFedQGT": 0.9165000000000001
+   },
+   "difference": {
+    "QFedAvg": {
+     "mean": 11.893749999999997,
+     "se": 2.236058078218603,
+     "higher": 15
+    },
+    "QFedFisher": {
+     "mean": 16.387500000000003,
+     "se": 2.888134850845207,
+     "higher": 16
+    }
+   }
+  },
+  {
+   "multiplier": 490.0,
+   "selected_step_sizes": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "same_as_experiment": true,
+   "accuracy": {
+    "QFedAvg": 0.8275625,
+    "QFedFisher": 0.7826875,
+    "QFedQGT": 0.9266875
+   },
+   "difference": {
+    "QFedAvg": {
+     "mean": 9.912499999999998,
+     "se": 2.682565236858183,
+     "higher": 13
+    },
+    "QFedFisher": {
+     "mean": 14.399999999999999,
+     "se": 2.6904150856946454,
+     "higher": 15
+    }
+   }
+  },
+  {
+   "multiplier": 540.0,
+   "selected_step_sizes": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   },
+   "same_as_experiment": true,
+   "accuracy": {
+    "QFedAvg": 0.796375,
+    "QFedFisher": 0.778875,
+    "QFedQGT": 0.9253125
+   },
+   "difference": {
+    "QFedAvg": {
+     "mean": 12.893749999999997,
+     "se": 2.2726172274494445,
+     "higher": 16
+    },
+    "QFedFisher": {
+     "mean": 14.643749999999997,
+     "se": 2.445454435444123,
+     "higher": 15
+    }
+   }
+  }
+ ]
+}

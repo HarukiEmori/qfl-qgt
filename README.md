@@ -34,6 +34,7 @@ figures and tables.
 | `scripts/emulator_status.py` | Progress of a campaign (rounds, jobs, cost), read from its results folder |
 | `scripts/emulator_precheck.py`, `scripts/emulator_campaign_after_precheck.sh` | Tests of a short pre-check run on the emulator (jobs completed, finite results, expected noise strengths), and a script that starts a campaign only after these tests pass |
 | `scripts/emulator_design.py` | Candidate designs of the two-class emulator experiment, compared in the local model before the runs |
+| `scripts/emulator_multiplier_check.py` | Echo frequency of the noisy clients in the pre-check run, the matched multiplier of the local model, and the step sizes and prediction of the two-class experiment at several multipliers |
 | `scripts/emulator_summary.py` | Final accuracies and paired differences of the emulator experiments |
 | `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
 | `scripts/nexus_metric.py` | Two-copy measurement of a block of the Bures metric on the emulator |
@@ -137,14 +138,15 @@ The same steps are in `notebooks/reimei_E_experiments.ipynb`, which is stored wi
 
 **Two experiments.**  The first experiment (`emulator_iid`, `emulator_dirichlet`; folders `emulator-reimei-E*`) has four
 classes and a one-layer circuit on four qubits.  The noiseless accuracy of that circuit on the four-class task is about
-0.72, so all accuracies of this experiment are low.  The second experiment (`emulator2_iid`; folder
+0.72, so all accuracies of this experiment are low (between 0.27 and 0.42 on the emulator).  The second experiment (`emulator2_iid`; folder
 `emulator2-reimei-E`) uses the two-class task of the simulations and a one-layer circuit on two qubits, which solves
 the task (0.99 without noise) and costs about a quarter of the four-qubit circuit per image and shot: two reference
 clients with 16 shots per circuit, six clients with 400-fold error rates and one shot, 8 images per client and round,
 25 rounds, IID data, 16 seeds.  Its design, step sizes, number of seeds and analysis were fixed before the runs on the
 emulator (`plans/emulator2.md`); the candidate designs were compared in the local model with
-`scripts/emulator_design.py` (`results/emulator-design/`), and the multiplier of the local model was matched to echo
-measurements of the same circuit on the emulator (`results/nexus-geometry/reimei-E-calibration_n2.json`).
+`scripts/emulator_design.py` (`results/emulator-design/`), and the multiplier of the local model was chosen so that it
+reproduces echo measurements of the same circuit on the emulator (`results/nexus-geometry/reimei-E-calibration_n2.json`;
+the dependence of the prediction on this multiplier is in `results/emulator-design/multiplier-sensitivity.json`).
 
 **Running a campaign.**  A campaign needs one submission per round, so a process has to stay alive for hours:
 
@@ -159,15 +161,16 @@ python scripts/emulator_status.py --name emulator2-reimei-E --nexus   # also ask
 
 `emulator_campaign.sh` starts `run_emulator.py` and starts it again whenever it stops before the end.  Every start
 reads the finished rounds from the cache and re-attaches to the submitted jobs, so nothing is submitted twice.
-A request to Nexus that does not return (for example after the computer slept) ends the process after ten minutes
-(`--stall-timeout`), and the script restarts it.  On macOS the script keeps the computer awake; a closed lid still
-puts a laptop to sleep, and the campaign then continues after the computer wakes up.  The output is appended to
-`results/<name>/campaign.log`.
+If a request to Nexus does not return (for example after the computer slept), the client ends its process after ten
+minutes (`--stall-timeout`), and the script restarts it.  On macOS the script keeps the computer awake.  A closed lid
+still puts a laptop to sleep; the submitted jobs keep running on the emulator, and the campaign continues after the
+computer wakes up.  The output is appended to `results/<name>/campaign.log`.
 
 To stop a campaign, end the script and the client (`kill $(cat results/<name>/campaign.pid)`, then the process of
 `run_emulator.py`).  The jobs of the current round that are already submitted still run on the emulator unless they
-are cancelled in the web interface of Nexus.  A cancelled job, or programs whose jobs failed three times, end the
-client with the exit status 76, and the script does not restart it; the same command continues the campaign later.
+are cancelled in the web interface of Nexus.  After a cancelled job, and after three failed jobs of the same programs,
+the client ends with the exit status 76, and the script does not restart it; the same command continues the campaign
+later.
 
 | Result | Content |
 | :-- | :-- |

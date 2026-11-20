@@ -6,7 +6,9 @@ A pre-check run executes one round of a few runs whose seeds are not part of the
 and the devices of the campaign.  This script reads its results and tests that
 
 1. every submitted job is completed and none has failed,
-2. the stored arrays of every run are finite,
+2. the stored results of every run are finite (accuracy and loss of the noiseless circuit, parameters,
+   training loss and weights of every method, and the estimated noise strength, metric attenuation and
+   variance of QFedQGT),
 3. the noise strength that QFedQGT estimates from the echo circuits is small for the reference
    clients and, for the noisy clients, close to the echo measurement of the same circuit
    (``results/nexus-geometry/<device>-calibration_n<qubits>.json`` or ``...-<scenario>.json``).
@@ -30,6 +32,11 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+# Arrays that must be finite.  Other stored arrays are undefined by design in some rounds or for some methods:
+# the heterogeneity estimate of the first round, the per-round accuracy on the device (not evaluated on the
+# emulator), and the noise strength of the methods that do not estimate it.
+FINITE = ("acc_exact", "loss_exact", "theta", "train_loss", "weights")
+FINITE_QFEDQGT = ("p_hat", "kappa_hat", "sigma2")
 REFERENCE_MAX = 0.1        # largest accepted mean noise strength of the reference clients
 NOISY_TOLERANCE = 0.2      # accepted distance of the mean noise strength of the noisy clients from the echo measurement
 NOISY_RANGE = (0.4, 0.95)  # accepted range when no echo measurement of the circuit is stored
@@ -93,7 +100,7 @@ def check(name: str, root: str = ROOT) -> dict:
          f"{jobs['completed']} of {jobs['submitted']}")
     test("no job has failed", jobs["failed"] == 0, f"{jobs['failed']} failed")
 
-    ref, noisy, finite, runs = [], [], True, 0
+    ref, noisy, finite, runs, not_finite = [], [], True, 0, []
     scale = qubits = scenario = p_max = None
     for row in summary["runs"]:
         sc, cfg = row["scenario_definition"], row["run"]
@@ -106,14 +113,17 @@ def check(name: str, root: str = ROOT) -> dict:
             continue
         data = np.load(files[0])
         runs += 1
-        for key in data.files:
-            if data[key].dtype.kind == "f" and not key.endswith("/acc_device") and not np.all(np.isfinite(data[key])):
+        methods = sorted({key.split("/")[0] for key in data.files})
+        required = [f"{m}/{k}" for m in methods for k in FINITE] + [f"QFedQGT/{k}" for k in FINITE_QFEDQGT]
+        for key in required:
+            if key not in data.files or not np.all(np.isfinite(np.asarray(data[key], dtype=float))):
                 finite = False
+                not_finite.append(f"{row['scenario']}-seed{row['seed']}: {key}")
         p_hat = np.asarray(data["QFedQGT/p_hat"], dtype=float)[-1]        # estimate of every client after the last round
         ref += list(p_hat[scales == 1.0])
         noisy += list(p_hat[scales != 1.0])
     test("every run has its result file", runs == len(summary["runs"]) and runs > 0, f"{runs} of {len(summary['runs'])}")
-    test("all stored arrays are finite", finite)
+    test("the accuracies, losses, parameters, weights and noise estimates are finite", finite, ", ".join(not_finite[:4]))
     report["noise_strength"] = dict(reference=[float(x) for x in ref], noisy=[float(x) for x in noisy])
     if ref and noisy:
         mean_ref, mean_noisy = float(np.mean(ref)), float(np.mean(noisy))

@@ -11,8 +11,9 @@ Does QFedQGT reach a higher test accuracy than QFedAvg and QFedFisher when the c
 their devices and in their shot budgets, at accuracies that are not limited by the circuit?
 
 The first experiment on the emulator (four classes, one-layer circuit on four qubits) cannot answer the
-second part: the noiseless accuracy of that circuit on that task is about 0.72, and all accuracies of
-that experiment are between 0.27 and 0.42.  The second experiment uses the two-class task (digits 0 and
+second part of the question, whether the advantage appears at accuracies that the circuit does not limit.
+The noiseless accuracy of that circuit on that task is about 0.72, and all accuracies of that experiment
+are between 0.27 and 0.42.  The second experiment uses the two-class task (digits 0 and
 1) and a one-layer circuit on two qubits, which reaches 0.99 without noise (`scripts/capacity_check.py`).
 
 ## Design (fixed)
@@ -51,8 +52,7 @@ multiplier that reproduces the echo survival measured on the emulator for the sa
    state; these multipliers are not used.
 2. Step sizes: selected for every method on the tuning seeds 100 to 131 (`scripts/run_campaign.py tune`
    and `select`), by the final test accuracy.  The runs of the two-qubit circuit are short, and 32
-   tuning seeds are used (8 in the other experiments), because the selection with 8 seeds was not
-   stable for the baselines.
+   tuning seeds are used (8 in the other experiments) to reduce the statistical error of the selection.
 3. Design: candidates that differ in the number of qubits, the number of noisy clients, the minibatch
    size, the shots of the reference clients, the number of rounds and the data partition were compared
    on the design seeds 200 to 215 (`scripts/emulator_design.py`, `results/emulator-design/`).  The
@@ -100,8 +100,8 @@ on blocks of 20 test images; `results/emulator2-local/`) give 0.802 ± 0.027, 0.
 seeds for both baselines).
 
 In the first experiment the differences measured on the emulator agreed with those of the local model
-within their standard errors, which were large (6 seeds).  The differences on the emulator may be
-smaller than the values above.
+within their standard errors.  These standard errors were large, because only 6 seeds were run.  The
+differences on the emulator may be smaller than the values above.
 
 Two variants of QFedAvg were run in the local model on the same seeds and are not run on the emulator
 (`scripts/run_campaign.py`, methods `QFedAvg-shots` and `Euclid+re`).  The average of plain gradients
@@ -120,7 +120,8 @@ QFedFisher, as stated above.
 - Comparison: for each baseline, the mean over the 16 seeds of the paired difference
   QFedQGT minus baseline, its standard error, and the number of seeds in which QFedQGT is higher.
 - All 16 seeds are reported.  No seed is added or removed after the results are known.  Jobs that end
-  with an error of the service are submitted again; an interrupted campaign continues from the cache.
+  with an error of the service are submitted again, up to three times (see the pre-check below); an
+  interrupted campaign continues from the cache.
 - The results are reported whatever their sign and size.
 
 ## Cost and duration (estimate)
@@ -150,6 +151,36 @@ PYTHON=python scripts/emulator_campaign_after_precheck.sh emulator2-smoke emulat
 
 A job that is cancelled, or programs whose jobs fail three times, stop the campaign for good
 (`scripts/emulator_campaign.sh`); the same command continues it later.
+
+Outcome of the pre-check (2026-11-20, before the first job of the campaign).  The five jobs of the
+pre-check completed, among them a program with 2,448 circuits.  The estimated noise strength is 0.004 on
+average for the reference clients and 0.588 for the noisy clients (echo measurement of the circuit: 0.708).
+The first version of the tests also required every stored array to be finite and stopped the start of the
+campaign: some stored arrays are undefined by design (the heterogeneity estimate of the first round, the
+per-round accuracy on the device that the runner does not evaluate on the emulator, and the noise strength
+of the methods that do not estimate it).  The test now names the arrays that must be finite, and the
+pre-check passes.
+
+## Sensitivity to the multiplier of the local model (made before the first job of the campaign)
+
+The echo circuits of the noisy clients in the pre-check (96 circuits, 480 samples, inputs and parameters of
+a training round) give a frequency of 0.388 ± 0.022.  The local model reproduces it at the multiplier 426
+(399 to 455), which is lower than the multiplier 537 from the echo measurement with 8 inputs that the
+model of this plan uses (540).  The two measurements differ by 2.7 combined standard errors; the echo
+frequency may depend on the inputs and parameters.  `scripts/emulator_multiplier_check.py`
+(`results/emulator-design/multiplier-sensitivity.json`) repeats the selection of the step sizes and the
+prediction for the seeds 0 to 15 at several multipliers of the local model:
+
+| Multiplier of the local model | Selected step sizes | Accuracy (QFedAvg, QFedFisher, QFedQGT) | QFedQGT minus QFedAvg, QFedFisher (points) |
+| :-: | :-: | :-: | :-: |
+| 430 | 0.6, 0.3, 0.1 | 0.786, 0.794, 0.937 | +15.0 ± 2.4, +14.3 ± 3.4 |
+| 460 | 0.6, 0.3, 0.1 | 0.798, 0.753, 0.917 | +11.9 ± 2.2, +16.4 ± 2.9 |
+| 490 | 0.6, 0.3, 0.1 | 0.828, 0.783, 0.927 | +9.9 ± 2.7, +14.4 ± 2.7 |
+| 540 | 0.6, 0.3, 0.1 | 0.796, 0.779, 0.925 | +12.9 ± 2.3, +14.6 ± 2.4 |
+
+The selected step sizes are the same for all four multipliers, so the runs on the emulator do not depend
+on this choice.  The prediction of this plan stays the one with the multiplier 540, and the table gives
+its dependence on the multiplier.
 
 ## Optional second condition (not run unless decided separately)
 
