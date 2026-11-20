@@ -30,8 +30,14 @@ figures and tables.
 | `scripts/run_campaign.py` | Simulation campaign: step-size selection on tuning seeds and the reported runs |
 | `scripts/run_federated.py` | One federated run on a chosen backend (`local`, `aer`, `nexus`) |
 | `scripts/run_emulator.py` | Federated training on the emulator: several scenarios and seeds in lockstep, final evaluation on the device |
+| `scripts/emulator_campaign.sh` | Runs a campaign of `run_emulator.py` until it has finished and restarts it after an interruption |
+| `scripts/emulator_status.py` | Progress of a campaign (rounds, jobs, cost), read from its results folder |
+| `scripts/emulator_design.py` | Candidate designs of the two-class emulator experiment, compared in the local model before the runs |
+| `scripts/emulator_summary.py` | Final accuracies and paired differences of the emulator experiments |
 | `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
 | `scripts/nexus_metric.py` | Two-copy measurement of a block of the Bures metric on the emulator |
+| `scripts/nexus_position.py` | Survival of an echo circuit against its position in a packed program |
+| `scripts/nexus_job_times.py` | Waiting and execution times of the jobs of a campaign |
 | `scripts/nexus_smoke.py` | Smallest job on a Quantinuum backend (run before a campaign) |
 | `scripts/capacity_check.py` | Accuracy of the noiseless circuits trained with exact gradients |
 | `scripts/download_mnist.py` | Downloads the MNIST archive to `data/` |
@@ -89,7 +95,8 @@ The scenarios are defined in `qfedqgt/scenarios.py`.
 
 Every (scenario, seed, method) is one file under `results/`, and finished tasks are skipped when a stage is
 run again.  The step sizes are selected on eight tuning seeds (100 to 107) by the final test accuracy, and the
-reported runs use the seeds 0 to 15.  The complete campaign takes about three hours on 14 cores.
+reported runs use the seeds 0 to 15.  The two-class emulator experiment (`emulator2_iid`), whose runs are short,
+uses 32 tuning seeds (100 to 131).  The complete campaign takes about three hours on 14 cores.
 
 A single federated run with all methods in lockstep, on the local simulator or on the Quantinuum emulator
 (the latter requires an account with access to `reimei-E` and `qnx login`):
@@ -101,7 +108,7 @@ python scripts/run_federated.py --scenario shots_and_noise --backend nexus --dev
 
 ## Experiments on the emulator `reimei-E`
 
-The emulator experiments of the paper were run on 2026-11-19 through Quantinuum Nexus.  Their shot tables,
+The emulator experiments of the paper were run from 2026-11-19 on through Quantinuum Nexus.  Their shot tables,
 job logs and run records are in `results/`, so that every command below reproduces its result from the cache
 without a login.  With `--cached-only` a script never submits a job and stops if a result is missing.  Such a
 replay recomputes the results from the stored shot tables, compares them with the stored result files, and
@@ -113,6 +120,7 @@ without `--cached-only`.
 python scripts/nexus_geometry.py --device reimei-E --shots 100 --cached-only            # echo circuits, two-layer circuit
 python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --scales 1 100 200 300 400 500 --cached-only
 python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1 --cached-only
+python scripts/nexus_position.py --device reimei-E --scales 1 300 --shots 60 20 --circuits 600 --cached-only  # position in a program
 python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --cached-only
 python scripts/emulator_summary.py                                                      # accuracies and paired differences
 python scripts/make_figures.py emulator
@@ -126,10 +134,39 @@ command above.  In `results/emulator-reimei-E/` (seeds 0 to 5) the packing chang
 
 The same steps are in `notebooks/reimei_E_experiments.ipynb`, which is stored with its output.
 
+**Two experiments.**  The first experiment (`emulator_iid`, `emulator_dirichlet`; folders `emulator-reimei-E*`) has four
+classes and a one-layer circuit on four qubits.  The noiseless accuracy of that circuit on the four-class task is about
+0.72, so all accuracies of this experiment are low.  The second experiment (`emulator2_iid`; folder
+`emulator2-reimei-E`) uses the two-class task of the simulations and a one-layer circuit on two qubits, which solves
+the task (0.99 without noise) and costs about a quarter of the four-qubit circuit per image and shot: two reference
+clients with 16 shots per circuit, six clients with 400-fold error rates and one shot, 8 images per client and round,
+25 rounds, IID data, 16 seeds.  Its design, step sizes, number of seeds and analysis were fixed before the runs on the
+emulator (`plans/emulator2.md`); the candidate designs were compared in the local model with
+`scripts/emulator_design.py` (`results/emulator-design/`), and the multiplier of the local model was matched to echo
+measurements of the same circuit on the emulator (`results/nexus-geometry/reimei-E-calibration_n2.json`).
+
+**Running a campaign.**  A campaign needs one submission per round, so a process has to stay alive for hours:
+
+```bash
+PYTHON=python scripts/emulator_campaign.sh emulator2-reimei-E      # runs until the campaign has finished
+python scripts/emulator_status.py --name emulator2-reimei-E        # progress: rounds, jobs, recorded cost
+python scripts/emulator_status.py --name emulator2-reimei-E --nexus   # also asks Nexus for the open jobs
+```
+
+`emulator_campaign.sh` starts `run_emulator.py` and starts it again whenever it stops before the end.  Every start
+reads the finished rounds from the cache and re-attaches to the submitted jobs, so nothing is submitted twice.
+A request to Nexus that does not return (for example after the computer slept) ends the process after ten minutes
+(`--stall-timeout`), and the script restarts it.  On macOS the script keeps the computer awake; a closed lid still
+puts a laptop to sleep, and the campaign then continues after the computer wakes up.  The output is appended to
+`results/<name>/campaign.log`.
+
 | Result | Content |
 | :-- | :-- |
 | `results/nexus-geometry/reimei-E.json`, `reimei-E-emulator_iid.json` | Frequency of the all-zero outcome of echo circuits for several error-rate multipliers, the inferred noise strength, and the multiplier at which the local gate-level model has the same frequency |
 | `results/metric/reimei-E.json` | Two-copy measurement of the 8 x 8 block of the Bures metric of one layer (137 circuits on 8 qubits, 200 shots) |
+| `results/nexus-position/reimei-E.json` | Frequency of the all-zero outcome of 600 copies of one echo circuit in a single program, for every position: the change from the first to the last circuit is -0.0024 ± 0.0018 at the reference error rates and +0.003 ± 0.010 at 300-fold error rates |
+| `results/emulator-design/` | Candidate designs of the two-class experiment in the local model: circuits on two, three and four qubits, numbers of noisy clients, minibatch sizes, shots, and Dirichlet partitions (step sizes on the tuning seeds 100 to 131, comparison on the seeds 200 to 215) |
+| `results/nexus-geometry/reimei-E-calibration_n2.json`, `...-calibration_n3.json` | Echo survival of the one-layer circuits on two and three qubits for error-rate multipliers from 1 to 700, with the matched multipliers of the local model.  For the two-qubit circuit the survival is 0.314 ± 0.016 at the multiplier 400 and falls below 1/4, the value of the maximally mixed state, at 600 and 700 |
 | `results/emulator-reimei-E/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, six seeds each |
 | `results/emulator-local*/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds with the same grouping into campaigns, 16 reported seeds, and every step size of the grids |
 
@@ -149,6 +186,9 @@ with record_run("my experiment", executor=executor, save_to="results/my-experime
 **What limits an experiment on the emulator.**  Measured on 2026-11-19:
 
 - A job waits between 3 and 30 minutes before it starts.  This wait occurs in every round of a training.
+- The jobs of one account ran almost one after another (on average 1.3 at a time), so the duration of a round is the
+  wait plus the summed run time of its jobs.  Circuits times shots therefore determine both the duration and the
+  cost (about 16 HQC per 1000 circuit-shots of the four-qubit one-layer circuit).
 - The run time of a job with a single program grows with the number of circuits times the number of shots:
   about 6 s plus 0.011 s per circuit and shot for four-qubit one-layer circuits (528 circuits took 13 s with one
   shot and about 3 minutes with 30 shots).  Jobs with several programs were much slower (2 to 4 minutes per

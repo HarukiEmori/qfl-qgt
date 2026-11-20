@@ -79,34 +79,51 @@ EMULATOR_EVAL_INPUTS = 60      # test images of the evaluation on the emulator (
 
 
 # --------------------------------------------------------------------------- two-class experiment on the emulator
-# The first experiment on the emulator has four classes and a one-layer circuit, whose noiseless accuracy on
-# that task is about 0.72, so that all accuracies are low.  The second experiment uses the two-class task of the
-# simulations, which the one-layer circuit solves (0.99 without noise).  Its design was chosen in the local
-# gate-level model before any run on the emulator (scripts/emulator_design.py, results/emulator-design/):
-# two reference clients with 5 shots per circuit, six clients with 300-fold error rates and one shot,
-# eight images per client and round, 15 rounds, IID data, 16 seeds.  The final models are evaluated on the
-# emulator with 100 shots per image, each of the last five rounds on its own block of 20 test images.
-EMULATOR2_SHOTS_REFERENCE, EMULATOR2_NOISY_CLIENTS, EMULATOR2_BATCH = 5, 6, 8
-_EMU2 = dict(classes=(0, 1), n_qubits=4, layers=1, beta=4.0, angle_scale=0.5, n_per_client=40,
+# The first experiment on the emulator has four classes and a one-layer circuit on four qubits, whose noiseless
+# accuracy on that task is about 0.72, so that all accuracies are low.  The second experiment uses the two-class
+# task of the simulations with a one-layer circuit on two qubits (4 trainable parameters, 9 circuits per image),
+# which solves the task (0.99 without noise) and costs about a quarter of the four-qubit circuit per image and shot.
+# Its design was chosen in the local gate-level model before any run on the emulator
+# (scripts/emulator_design.py, results/emulator-design/, plans/emulator2.md).
+#
+# Error-rate multiplier of the noisy clients on the emulator and matched multiplier of the local model, by the
+# number of qubits of the one-layer circuit.  The matched multiplier reproduces the echo survival measured on the
+# emulator (results/nexus-geometry/reimei-E-emulator_iid.json, -calibration_n3.json, -calibration_n2.json).
+EMULATOR2_NOISE = {4: (EMU_SCALE, EMU_LOCAL_SCALE), 3: (400.0, 456.0), 2: (400.0, 540.0)}
+EMULATOR2_QUBITS = 2
+EMULATOR2_SHOTS_REFERENCE, EMULATOR2_NOISY_CLIENTS, EMULATOR2_BATCH, EMULATOR2_ROUNDS = 16, 6, 8, 25
+_EMU2 = dict(classes=(0, 1), n_qubits=EMULATOR2_QUBITS, layers=1, beta=4.0, angle_scale=0.5, n_per_client=40,
              n_train_per_class=400, n_test_per_class=100,
-             gate_scales=(1.0,) * 2 + (EMU_SCALE,) * EMULATOR2_NOISY_CLIENTS,
-             local_scales=(1.0,) * 2 + (EMU_LOCAL_SCALE,) * EMULATOR2_NOISY_CLIENTS,
+             gate_scales=(1.0,) * 2 + (EMULATOR2_NOISE[EMULATOR2_QUBITS][0],) * EMULATOR2_NOISY_CLIENTS,
+             local_scales=(1.0,) * 2 + (EMULATOR2_NOISE[EMULATOR2_QUBITS][1],) * EMULATOR2_NOISY_CLIENTS,
              shots=(EMULATOR2_SHOTS_REFERENCE,) * 2 + (1,) * EMULATOR2_NOISY_CLIENTS)
 SCENARIOS["emulator2_iid"] = Scenario(name="emulator2_iid", **_EMU2)
 EMULATOR2_SCENARIOS = ("emulator2_iid",)
-# The same task on fewer qubits: circuits of candidate designs, used for echo measurements on the emulator
-# (scripts/nexus_geometry.py --scenario calibration_n2) and for comparisons in the local model.
-SCENARIOS["calibration_n2"] = Scenario(name="calibration_n2", **{**_EMU2, "n_qubits": 2})
-SCENARIOS["calibration_n3"] = Scenario(name="calibration_n3", **{**_EMU2, "n_qubits": 3})
+# The same task with the one-layer circuit on two and on three qubits and the settings of the four-qubit
+# candidates: circuits of the echo measurements on the emulator (scripts/nexus_geometry.py --scenario calibration_n2).
+_CAL = dict(classes=(0, 1), layers=1, beta=4.0, angle_scale=0.5, n_per_client=40, n_train_per_class=400,
+            n_test_per_class=100, gate_scales=(1.0,) * 2 + (EMU_SCALE,) * 6, local_scales=(1.0,) * 2 + (EMU_LOCAL_SCALE,) * 6,
+            shots=(5,) * 2 + (1,) * 6)
+SCENARIOS["calibration_n2"] = Scenario(name="calibration_n2", n_qubits=2, **_CAL)
+SCENARIOS["calibration_n3"] = Scenario(name="calibration_n3", n_qubits=3, **_CAL)
 CALIBRATION_SCENARIOS = ("calibration_n2", "calibration_n3")
-EMULATOR2_RUN = RunConfig(rounds=15, batch=EMULATOR2_BATCH, local_steps=1, echo_shots=5, eval_shots=100, eval_every=1)
+EMULATOR2_RUN = RunConfig(rounds=EMULATOR2_ROUNDS, batch=EMULATOR2_BATCH, local_steps=1, echo_shots=5, eval_shots=100,
+                          eval_every=1)
 EMULATOR2_SEEDS = tuple(range(16))
+# The runs of the two-qubit circuit are short, and the step sizes of this experiment are selected on more tuning seeds.
+EMULATOR2_TUNING_SEEDS = tuple(range(100, 132))
 # candidates of the design study (scripts/emulator_design.py):
-# (reference clients, noisy clients, minibatch, shots of the reference clients, Dirichlet parameter or None)
+# (qubits, noisy clients, minibatch, shots of the reference clients, Dirichlet parameter or None)
 EMULATOR2_DESIGN_CANDIDATES = (
-    (2, 2, 8, 5, None), (2, 4, 8, 5, None), (2, 6, 8, 5, None), (2, 10, 8, 5, None),
-    (2, 6, 8, 10, None), (2, 6, 4, 10, None), (2, 6, 4, 5, None),
-    (2, 6, 8, 5, 0.5), (2, 6, 8, 5, 1.0), (2, 6, 8, 5, 2.0), (2, 6, 8, 5, 5.0),
+    # four qubits (multiplier 300): the design of the four-class experiment scaled to this task, and four times the shots
+    (4, 6, 8, 5, None), (4, 6, 8, 20, None),
+    # three qubits (multiplier 400)
+    (3, 6, 8, 16, None),
+    # two qubits (multiplier 400): images and shots of the reference clients, number of noisy clients
+    (2, 6, 8, 8, None), (2, 6, 8, 16, None), (2, 6, 12, 8, None), (2, 6, 12, 12, None), (2, 6, 16, 8, None),
+    (2, 4, 8, 16, None), (2, 10, 8, 16, None),
+    # the chosen design with a Dirichlet partition of the labels
+    (2, 6, 8, 16, 5.0), (2, 6, 8, 16, 2.0), (2, 6, 8, 16, 1.0), (2, 6, 8, 16, 0.5),
 )
 
 # Every experiment on the emulator: its scenarios, run configuration, number of final rounds of the reported
@@ -117,7 +134,7 @@ EMULATOR_EXPERIMENTS = {
     "four_class": dict(scenarios=EMULATOR_SCENARIOS, run=EMULATOR_RUN, tail=EMULATOR_TAIL, eval_inputs=EMULATOR_EVAL_INPUTS,
                        eval_rotate=False, segments=EMULATOR_SEGMENTS, programs_per_job=EMULATOR_PROGRAMS_PER_JOB),
     "two_class": dict(scenarios=EMULATOR2_SCENARIOS, run=EMULATOR2_RUN, tail=5, eval_inputs=20,
-                      eval_rotate=True, segments=1224, programs_per_job=1),
+                      eval_rotate=True, segments=2448, programs_per_job=1),
 }
 # experiment of every campaign folder (results/<name>), on the emulator and in the local model
 EMULATOR2_CAMPAIGNS = {"emulator2-reimei-E": EMULATOR2_SEEDS}       # on the emulator
@@ -185,6 +202,12 @@ GRID_NATURAL = (0.025, 0.05, 0.1, 0.2, 0.3, 0.5)    # natural-gradient methods
 NATURAL = ("QFedQGT", "QFedQGT-invvar", "QNG+data", "Bures+data")
 TUNING_SEEDS = tuple(range(100, 108))          # disjoint from the reported seeds
 REPORT_SEEDS = tuple(range(16))
+
+
+def tuning_seeds(scenario: str) -> tuple:
+    """Tuning seeds of ``scenario``."""
+    return EMULATOR2_TUNING_SEEDS if scenario in EMULATOR2_SCENARIOS else TUNING_SEEDS
+
 
 # fallback values, used only when results/tuning/learning_rates.json does not exist
 _DEFAULT_LR = {"QFedAvg": 0.6, "QFedFisher": 0.3, "QFedAvg-shots": 0.6, "QFedQGT": 0.1,

@@ -1,0 +1,86 @@
+{
+ "device": "reimei-E",
+ "scenario": "calibration_n2",
+ "layers": 1,
+ "shots": 100,
+ "inputs": 8,
+ "seed": 0,
+ "cost_charged_hqc": 76.08,
+ "cost_formula_hqc": 79.91999999999999,
+ "jobs_submitted_from": "2026-11-20T04:27:55-0800",
+ "jobs_completed_by": "2026-11-20T04:43:48-0800",
+ "rows": [
+  {
+   "scale": 1.0,
+   "samples": 800,
+   "survival": 0.9975,
+   "survival_se": 0.0017655558614781731,
+   "survival_local": 0.9963863355330365,
+   "p_hat": 0.0016680578752041875,
+   "p_hat_local": 0.00241201856141271,
+   "kappa": 0.9974986093721009,
+   "kappa_local": 0.9963834283724744,
+   "matched_local_scale": null
+  },
+  {
+   "scale": 300.0,
+   "samples": 800,
+   "survival": 0.445,
+   "survival_se": 0.01757039413331414,
+   "survival_local": 0.5106015099889434,
+   "p_hat": 0.4900980486407215,
+   "p_hat_local": 0.4105352597608083,
+   "kappa": 0.3443932233691556,
+   "kappa_local": 0.4372147065470212,
+   "matched_local_scale": 361.5324905254387
+  },
+  {
+   "scale": 400.0,
+   "samples": 800,
+   "survival": 0.31375,
+   "survival_se": 0.016405446408891165,
+   "survival_local": 0.40934492726895017,
+   "p_hat": 0.708452405257735,
+   "p_hat_local": 0.5390662704625893,
+   "kappa": 0.13162503704242068,
+   "kappa_local": 0.2908549494473512,
+   "matched_local_scale": 537.0134880840058
+  },
+  {
+   "scale": 500.0,
+   "samples": 800,
+   "survival": 0.2775,
+   "survival_se": 0.015830893452360797,
+   "survival_local": 0.3349219178971653,
+   "p_hat": 0.8085145784487323,
+   "p_hat_local": 0.6635044965190663,
+   "kappa": 0.0615478225808724,
+   "kappa_local": 0.16944198251019765,
+   "matched_local_scale": 621.6521396928886
+  },
+  {
+   "scale": 600.0,
+   "samples": 800,
+   "survival": 0.19625,
+   "survival_se": 0.014041720759045168,
+   "survival_local": 0.2852075166374495,
+   "p_hat": 1.0,
+   "p_hat_local": 0.7833358462583178,
+   "kappa": 1.998001998002002e-06,
+   "kappa_local": 0.07716731913606811,
+   "matched_local_scale": null
+  },
+  {
+   "scale": 700.0,
+   "samples": 800,
+   "survival": 0.1725,
+   "survival_se": 0.01335775757752775,
+   "survival_local": 0.2581950875429799,
+   "p_hat": 1.0,
+   "p_hat_local": 0.8954687444319173,
+   "kappa": 1.998001998002002e-06,
+   "kappa_local": 0.019785376530644147,
+   "matched_local_scale": null
+  }
+ ]
+}

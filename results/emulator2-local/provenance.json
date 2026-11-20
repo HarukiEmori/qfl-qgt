@@ -1,0 +1,123 @@
+{
+ "task": "federated training of several runs in lockstep",
+ "entry": "scripts/run_emulator.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+  "branch": "main",
+  "modified": [
+   "qfedqgt/scenarios.py",
+   "scripts/emulator_design.py",
+   "scripts/run_campaign.py",
+   "tests/test_emulator2.py"
+  ]
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "local simulation (exact outcome distributions of the gate-level noise model, multinomial sampling of the shots)",
+  "local_multipliers": {
+   "emulator2_iid": [
+    1.0,
+    540.0
+   ]
+  }
+ },
+ "parameters": {
+  "scenarios": [
+   "emulator2_iid"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ],
+  "methods": [
+   "QFedAvg",
+   "QFedFisher",
+   "QFedQGT"
+  ],
+  "rounds": 25,
+  "batch": 8,
+  "echo_shots": 5,
+  "eval_shots": 100,
+  "eval_inputs": 20,
+  "shots_per_circuit": {
+   "emulator2_iid": [
+    1,
+    16
+   ]
+  },
+  "error_rate_multipliers": {
+   "emulator2_iid": [
+    1.0,
+    400.0
+   ]
+  },
+  "learning_rates": {
+   "emulator2_iid": {
+    "QFedAvg": 0.6,
+    "QFedFisher": 0.3,
+    "QFedQGT": 0.1
+   }
+  },
+  "segments": 2448,
+  "programs_per_job": 1,
+  "segments_schedule": []
+ },
+ "started": "2026-11-20T04:56:23-0800",
+ "finished": "2026-11-20T04:56:33-0800",
+ "duration_s": 10.2,
+ "jobs": [],
+ "usage": {
+  "n_circuits": 721600,
+  "n_shots": 3891200
+ },
+ "outputs": [
+  "results/emulator2-local/emulator2_iid-seed0.npz",
+  "results/emulator2-local/emulator2_iid-seed1.npz",
+  "results/emulator2-local/emulator2_iid-seed2.npz",
+  "results/emulator2-local/emulator2_iid-seed3.npz",
+  "results/emulator2-local/emulator2_iid-seed4.npz",
+  "results/emulator2-local/emulator2_iid-seed5.npz",
+  "results/emulator2-local/emulator2_iid-seed6.npz",
+  "results/emulator2-local/emulator2_iid-seed7.npz",
+  "results/emulator2-local/emulator2_iid-seed8.npz",
+  "results/emulator2-local/emulator2_iid-seed9.npz",
+  "results/emulator2-local/emulator2_iid-seed10.npz",
+  "results/emulator2-local/emulator2_iid-seed11.npz",
+  "results/emulator2-local/emulator2_iid-seed12.npz",
+  "results/emulator2-local/emulator2_iid-seed13.npz",
+  "results/emulator2-local/emulator2_iid-seed14.npz",
+  "results/emulator2-local/emulator2_iid-seed15.npz",
+  "results/emulator2-local/summary.json",
+  "results/emulator2-local/provenance.json"
+ ],
+ "notes": [
+  "the working tree differed from the commit; the commit alone does not reproduce this run"
+ ]
+}

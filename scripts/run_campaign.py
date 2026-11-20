@@ -16,10 +16,11 @@ sens    every step size of the grid on the reported seeds       -> results/sens-
 Every (scenario, seed, method) is one task and one file, and finished tasks are skipped.
 The tuning seeds and the reported seeds are disjoint (qfedqgt/scenarios.py).
 
-The scenarios of the emulator experiment (``emulator_iid``, ``emulator_dirichlet``) are not part
-of the default list.  Naming them with ``--scenarios`` runs the same stages with the local
-gate-level model at the multipliers matched to the emulator: ``tune`` and ``select`` give the step
-sizes used on the emulator, and ``main`` and ``sens`` give the prediction of the local model.
+The scenarios of the experiments on the emulator (``emulator_iid``, ``emulator_dirichlet``,
+``emulator2_iid``) are not part of the default list.  Naming them with ``--scenarios`` runs the same
+stages with the local gate-level model at the multipliers matched to the emulator: ``tune`` and
+``select`` give the step sizes used on the emulator, and ``main`` and ``sens`` give the prediction of
+the local model.  The number of tuning seeds of a scenario is ``qfedqgt.scenarios.tuning_seeds``.
 """
 from __future__ import annotations
 
@@ -45,7 +46,7 @@ from qfedqgt import scenarios as S                                # noqa: E402
 
 MAIN_METHODS = ("QFedAvg", "QFedFisher", "QFedQGT")
 ABLATIONS = ("QFedAvg-shots", "QNG+data", "Bures+data", "Euclid+re", "QFedQGT-invvar")
-WITH_ABLATIONS = ("shots_and_noise", "noise_only_x500")
+WITH_ABLATIONS = ("shots_and_noise", "noise_only_x500", "emulator2_iid")
 
 
 def methods_of(scenario: str) -> tuple:
@@ -65,7 +66,7 @@ def _tasks(stage: str, scenarios) -> list:
     for sc in scenarios:
         if stage == "tune":
             d = os.path.join(ROOT, "results", "tuning", sc)
-            for seed in S.TUNING_SEEDS:
+            for seed in S.tuning_seeds(sc):
                 for m in methods_of(sc):
                     for lr in S.grid(m):
                         tasks.append((sc, seed, f"{m}@{lr:g}", lr, os.path.join(d, f"seed{seed}__{m}@{lr:g}.npz")))
@@ -128,7 +129,7 @@ def select(scenarios) -> None:
             rows = []
             for lr in S.grid(m):
                 files = sorted(glob.glob(os.path.join(d, f"seed*__{m}@{lr:g}.npz")))
-                if len(files) != len(S.TUNING_SEEDS):
+                if len(files) != len(S.tuning_seeds(sc)):
                     raise SystemExit(f"tuning runs missing for {sc} {m}@{lr:g}: {len(files)} files")
                 loss = [float(np.load(f)[f"{m}@{lr:g}/loss_exact"][-S.tail(sc):].mean()) for f in files]
                 acc = [float(np.load(f)[f"{m}@{lr:g}/acc_shots"][-S.tail(sc):].mean()) for f in files]

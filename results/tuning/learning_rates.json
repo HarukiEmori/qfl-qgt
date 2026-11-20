@@ -1,4 +1,14 @@
 {
+ "emulator2_iid": {
+  "Bures+data": 0.025,
+  "Euclid+re": 0.6,
+  "QFedAvg": 0.6,
+  "QFedAvg-shots": 0.6,
+  "QFedFisher": 0.3,
+  "QFedQGT": 0.1,
+  "QFedQGT-invvar": 0.1,
+  "QNG+data": 0.1
+ },
  "emulator_dirichlet": {
   "QFedAvg": 0.3,
   "QFedFisher": 0.15,

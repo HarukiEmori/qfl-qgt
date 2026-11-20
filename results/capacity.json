@@ -92,31 +92,31 @@
  {
   "scenario": "emulator2_iid",
   "seed": 0,
-  "n_params": 8,
+  "n_params": 4,
   "n_train": 200,
   "steps": 150,
-  "train_accuracy": 1.0,
+  "train_accuracy": 0.995,
   "test_accuracy": 0.995,
-  "test_loss": 0.19195032253611402
+  "test_loss": 0.19349314147298066
  },
  {
   "scenario": "emulator2_iid",
   "seed": 1,
-  "n_params": 8,
+  "n_params": 4,
   "n_train": 200,
   "steps": 150,
-  "train_accuracy": 0.995,
-  "test_accuracy": 0.995,
-  "test_loss": 0.20393346624598369
+  "train_accuracy": 1.0,
+  "test_accuracy": 0.99,
+  "test_loss": 0.2044979344541592
  },
  {
   "scenario": "emulator2_iid",
   "seed": 2,
-  "n_params": 8,
+  "n_params": 4,
   "n_train": 200,
   "steps": 150,
-  "train_accuracy": 0.995,
+  "train_accuracy": 1.0,
   "test_accuracy": 0.99,
-  "test_loss": 0.20325418066224468
+  "test_loss": 0.19835646096977022
  }
 ]

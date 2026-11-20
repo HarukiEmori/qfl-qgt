@@ -1,0 +1,169 @@
+{
+ "task": "noise strength from echo circuits",
+ "entry": "scripts/nexus_geometry.py",
+ "program": {
+  "repository": "https://github.com/HarukiEmori/qfl-qgt",
+  "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+  "branch": "main",
+  "modified": []
+ },
+ "environment": {
+  "python": "3.13.16",
+  "system": "Darwin arm64",
+  "packages": {
+   "numpy": "2.5.4",
+   "scipy": "1.18.1",
+   "pytket": "2.18.5",
+   "qnexus": "0.51.1",
+   "quantinuum-schemas": "7.8.2",
+   "pytket-qiskit": "0.79.0",
+   "matplotlib": "3.11.2"
+  }
+ },
+ "backend": {
+  "kind": "Quantinuum Nexus",
+  "project": "QFedQGT",
+  "device_profiles": [
+   "reimei-E-x1",
+   "reimei-E-x300",
+   "reimei-E-x400",
+   "reimei-E-x500",
+   "reimei-E-x600",
+   "reimei-E-x700"
+  ],
+  "cache": "results/nexus-geometry/cache-reimei-E"
+ },
+ "parameters": {
+  "scenario": "calibration_n2",
+  "layers": 1,
+  "scales": [
+   1.0,
+   300.0,
+   400.0,
+   500.0,
+   600.0,
+   700.0
+  ],
+  "shots": 100,
+  "inputs": 8,
+  "seed": 0
+ },
+ "started": "2026-11-20T04:27:51-0800",
+ "finished": "2026-11-20T04:43:48-0800",
+ "duration_s": 956.7,
+ "jobs": [
+  {
+   "job_id": "a854c196-0b25-4c10-98a5-370c0f8d2fef",
+   "name": "geometry-reimei-E-0001-reimei-E-x1-p1-c8-042754",
+   "device": "reimei-E",
+   "error_scale": 1.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:55-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:41:24-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  },
+  {
+   "job_id": "d4ec02ab-ded4-4c80-ad7b-07eee7d19ac6",
+   "name": "geometry-reimei-E-0002-reimei-E-x300-p1-c8-042755",
+   "device": "reimei-E",
+   "error_scale": 300.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:56-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:41:45-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  },
+  {
+   "job_id": "af629fc4-8f19-486e-97cc-0f3a86ec3617",
+   "name": "geometry-reimei-E-0003-reimei-E-x400-p1-c8-042756",
+   "device": "reimei-E",
+   "error_scale": 400.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:56-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:42:25-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  },
+  {
+   "job_id": "3b4b22ea-9f1b-4a76-ac24-a025d4a091f8",
+   "name": "geometry-reimei-E-0004-reimei-E-x500-p1-c8-042756",
+   "device": "reimei-E",
+   "error_scale": 500.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:57-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:42:46-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  },
+  {
+   "job_id": "282012f6-9627-40c8-80fd-30205b718e9a",
+   "name": "geometry-reimei-E-0005-reimei-E-x600-p1-c8-042757",
+   "device": "reimei-E",
+   "error_scale": 600.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:57-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:43:28-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  },
+  {
+   "job_id": "57deb506-bdb0-4168-82c9-1390d28e0865",
+   "name": "geometry-reimei-E-0006-reimei-E-x700-p1-c8-042757",
+   "device": "reimei-E",
+   "error_scale": 700.0,
+   "noisy": true,
+   "shots": [
+    100
+   ],
+   "programs": 1,
+   "submitted": "2026-11-20T04:27:57-0800",
+   "commit": "5abf5500ee9ced48d5db9f477dd80bea839a1d02",
+   "modified": false,
+   "completed": "2026-11-20T04:43:48-0800",
+   "cost": 12.68,
+   "source": "submitted"
+  }
+ ],
+ "usage": {
+  "n_circuits": 48,
+  "n_shots": 4800,
+  "n_programs": 6,
+  "cost_formula_hqc": 79.91999999999999
+ },
+ "outputs": [
+  "results/nexus-geometry/reimei-E-calibration_n2.json",
+  "results/nexus-geometry/reimei-E-calibration_n2-provenance.json"
+ ],
+ "notes": []
+}
