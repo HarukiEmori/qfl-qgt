@@ -3,6 +3,9 @@
 The stand-in records the calls and returns all-zero shot tables.  It checks the bookkeeping of
 ``NexusExecutor`` (which jobs are submitted, cached, or re-attached); it does not emulate the service.
 """
+import json
+import os
+import subprocess
 import sys
 import types
 import uuid
@@ -23,6 +26,11 @@ class _Ref:
         self.__dict__.update(kw)
 
 
+class NotFound(Exception):
+    """The answer of the service for an unknown job (HTTP status 404)."""
+    status_code = 404
+
+
 class FakeQnx(types.ModuleType):
     """Minimal stand-in for the parts of qnexus that NexusExecutor calls."""
 
@@ -31,6 +39,7 @@ class FakeQnx(types.ModuleType):
         self.store = {}            # job id -> job
         self.started, self.fetched, self.configs = [], [], []
         self.broken = set()        # ids of jobs that end in an error
+        self.offline = False       # the service does not answer
         fake = self
 
         class projects:
@@ -51,6 +60,8 @@ class FakeQnx(types.ModuleType):
         class jobs:
             @staticmethod
             def status(job):
+                if fake.offline:
+                    raise ConnectionError("no route to host")
                 state = "ERROR" if str(job.id) in fake.broken else "COMPLETED"
                 return types.SimpleNamespace(status=f"JobStatusEnum.{state}")
 
@@ -71,6 +82,10 @@ class FakeQnx(types.ModuleType):
             @staticmethod
             def get(id=None, **kw):
                 fake.fetched.append(str(id))
+                if fake.offline:
+                    raise ConnectionError("no route to host")
+                if str(id) not in fake.store:
+                    raise NotFound(f"job {id} not found")
                 return fake.store[str(id)]
 
         self.projects, self.context, self.circuits, self.jobs = projects, context, circuits, jobs
@@ -253,3 +268,59 @@ def test_cached_only_never_submits(tmp_path, monkeypatch):
     ex = NexusExecutor("test", cache, segments=2, cached_only=True)
     ex.run(again)                                                     # now served from the cache
     assert len(fake.started) == 1 and ex.qnx is None and np.array_equal(again[0].counts, reqs[0].counts)
+
+
+def test_unreachable_service_keeps_the_jobs_reattachable(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, NexusUnreachable
+
+    device = DeviceProfile("reimei-E", 40.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2, poll_interval=0.0, max_poll_failures=2)
+    t, reqs = _requests(device)
+    rows = np.concatenate([r.A for r in reqs], axis=0)
+    specs = [(t, rows[s:s + 2], reqs[0].shots) for s in range(0, rows.shape[0], 2)]
+    handle = ex._submit(device, specs, "offline")
+    assert len(fake.started) == 1
+
+    # the service stops answering while the job is awaited: the job is not recorded as failed
+    fake.offline = True
+    with pytest.raises(NexusUnreachable):
+        ex._collect(handle)
+    # ... and a restarted run that cannot retrieve the job submits nothing in its place
+    ex2 = NexusExecutor("test", cache, segments=2, poll_interval=0.0, max_poll_failures=2)
+    with pytest.raises(NexusUnreachable):
+        ex2.run(_requests(device)[1])
+    with open(os.path.join(cache, "jobs.jsonl")) as f:
+        events = [json.loads(line)["event"] for line in f]
+    assert events == ["submitted"] and len(fake.started) == 1
+
+    # when the service answers again, the run re-attaches to the job and submits nothing
+    fake.offline = False
+    ex3 = NexusExecutor("test", cache, segments=2)
+    _, reqs3 = _requests(device)
+    ex3.run(reqs3)
+    assert len(fake.started) == 1 and reqs3[0].counts.shape == (1, 3, t.dim)
+
+
+def test_stall_guard_ends_a_process_whose_request_does_not_return(tmp_path):
+    code = (
+        "import sys, time\n"
+        f"sys.path.insert(0, {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))!r})\n"
+        "from qfedqgt.nexus import NexusExecutor\n"
+        f"ex = NexusExecutor('test', {str(tmp_path / 'cache')!r}, stall_timeout=0.4)\n"
+        "with ex._request('fast request'):\n"
+        "    pass\n"
+        "print('first request returned', flush=True)\n"
+        "with ex._request('blocked request'):\n"
+        "    time.sleep(30)\n"
+        "print('not reached', flush=True)\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=25)
+    from qfedqgt.nexus import STALL_EXIT_STATUS
+
+    assert out.returncode == STALL_EXIT_STATUS
+    assert "first request returned" in out.stdout and "not reached" not in out.stdout
+    assert "blocked request" in out.stderr
+

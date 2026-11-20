@@ -62,7 +62,6 @@ SCENARIOS["emulator_iid"] = Scenario(name="emulator_iid", **_EMU)
 SCENARIOS["emulator_dirichlet"] = Scenario(name="emulator_dirichlet", alpha=0.5, **_EMU)
 
 EMULATOR_SCENARIOS = ("emulator_iid", "emulator_dirichlet")
-SIMULATION_SCENARIOS = tuple(k for k in SCENARIOS if k not in EMULATOR_SCENARIOS)
 # The emulator experiment was executed in two campaigns with the same protocol: the first six seeds,
 # then the remaining seeds up to the number of seeds of the simulations.  The local model follows the
 # same grouping (the runs of a campaign advance in lockstep).
@@ -78,13 +77,68 @@ EMULATOR_PROGRAMS_PER_JOB = 3  # the emulator runs two jobs at a time, so the pr
 EMULATOR_EVAL_INPUTS = 60      # test images of the evaluation on the emulator (the same number from every class)
 
 
+
+# Every experiment on the emulator: its scenarios, run configuration, number of final rounds of the reported
+# accuracy, and number of test images of the evaluation on the emulator.
+# ``eval_inputs`` is the number of test images of one evaluated round; with ``eval_rotate`` every evaluated round
+# uses its own block of test images.  ``segments`` and ``programs_per_job`` are the default packing of the circuits.
+EMULATOR_EXPERIMENTS = {
+    "four_class": dict(scenarios=EMULATOR_SCENARIOS, run=EMULATOR_RUN, tail=EMULATOR_TAIL, eval_inputs=EMULATOR_EVAL_INPUTS,
+                       eval_rotate=False, segments=EMULATOR_SEGMENTS, programs_per_job=EMULATOR_PROGRAMS_PER_JOB),
+}
+# experiment of every campaign folder (results/<name>), on the emulator and in the local model
+CAMPAIGN_EXPERIMENT = {**{name: "four_class" for name in EMULATOR_CAMPAIGNS}, **{name: "four_class" for name in EMULATOR_LOCAL}}
+
+
+def _experiment_of(scenario: str) -> dict | None:
+    return next((e for e in EMULATOR_EXPERIMENTS.values() if scenario in e["scenarios"]), None)
+
+
+def experiment_of(scenario: str) -> dict:
+    """Experiment on the emulator that ``scenario`` belongs to (the four-class experiment for other scenarios)."""
+    return _experiment_of(scenario) or EMULATOR_EXPERIMENTS["four_class"]
+
+
+def emulator_scenarios() -> tuple:
+    """Names of all scenarios that belong to an experiment on the emulator."""
+    return tuple(sc for e in EMULATOR_EXPERIMENTS.values() for sc in e["scenarios"])
+
+
+def campaign_experiment(name: str) -> dict:
+    """Experiment of the campaign folder ``name`` (the four-class experiment for unknown names)."""
+    return EMULATOR_EXPERIMENTS[CAMPAIGN_EXPERIMENT.get(name, "four_class")]
+
+
+def campaign_scenarios(name: str) -> tuple:
+    return tuple(campaign_experiment(name)["scenarios"])
+
+
+def campaign_seeds(name: str) -> tuple:
+    """Seeds of the campaign folder ``name`` (those of the first campaign for unknown names)."""
+    return tuple(EMULATOR_CAMPAIGNS.get(name, EMULATOR_LOCAL.get(name, EMULATOR_SEEDS)))
+
+
 def run_config(scenario: str) -> RunConfig:
-    return EMULATOR_RUN if scenario in EMULATOR_SCENARIOS else RUN
+    e = _experiment_of(scenario)
+    return e["run"] if e else RUN
 
 
 def tail(scenario: str) -> int:
     """Number of final rounds over which the reported accuracy is averaged."""
-    return EMULATOR_TAIL if scenario in EMULATOR_SCENARIOS else 10
+    e = _experiment_of(scenario)
+    return e["tail"] if e else 10
+
+
+def eval_inputs(scenario: str) -> int:
+    """Number of test images of the evaluation on the emulator."""
+    e = _experiment_of(scenario)
+    return e["eval_inputs"] if e else EMULATOR_EVAL_INPUTS
+
+
+def simulation_scenarios() -> tuple:
+    """Scenarios of the simulations with the gate-level model (all scenarios outside the emulator experiments)."""
+    emu = emulator_scenarios()
+    return tuple(k for k in SCENARIOS if k not in emu)
 
 # step-size grids of scripts/run_campaign.py (stage "tune")
 GRID_EUCLID = (0.15, 0.3, 0.6, 1.0, 2.0, 4.0)        # plain-gradient methods

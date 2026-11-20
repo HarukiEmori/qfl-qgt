@@ -21,14 +21,24 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
+import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 
 import numpy as np
 
 from . import provenance, sim
 
-__all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor", "login_status"]
+__all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor", "NexusUnreachable",
+           "STALL_EXIT_STATUS", "login_status"]
+
+STALL_EXIT_STATUS = 75     # exit status of a process that the stall guard of NexusExecutor ended
+
+
+class NexusUnreachable(RuntimeError):
+    """Nexus did not answer.  The submitted jobs are not affected, and a later run re-attaches to them."""
 
 
 def login_status() -> str:
@@ -257,13 +267,21 @@ class NexusExecutor(_ProgramExecutor):
     missing, which protects a reproduction from the cache against accidental jobs.
     ``job_records`` lists the jobs behind the results of this session, including the jobs
     whose results were read from the cache (see :mod:`qfedqgt.provenance`).
+
+    A request to Nexus can block for ever on a dead connection, for example after the
+    computer slept or changed its network.  With ``stall_timeout`` set, a guard thread ends
+    the process with status ``STALL_EXIT_STATUS`` when a request has not returned within that
+    many seconds; a caller such as ``scripts/emulator_campaign.sh`` then starts the process
+    again, and the new process re-attaches to the submitted jobs.
     """
 
     def __init__(self, project: str, cache_dir: str, segments: int = 32, run_name: str = "qfedqgt",
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
                  io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90,
-                 segments_schedule=(), cached_only: bool = False):
+                 segments_schedule=(), cached_only: bool = False, stall_timeout: float | None = None):
         super().__init__(segments, segments_schedule)
+        self.stall_timeout = stall_timeout          # seconds after which a request without answer ends the process
+        self._active, self._active_lock, self._guard = {}, threading.Lock(), None
         self.cached_only = cached_only              # never submit: fail if a result is not in the cache
         self.io_threads = io_threads
         self.poll_interval = poll_interval          # seconds between two status requests of a job
@@ -289,9 +307,51 @@ class NexusExecutor(_ProgramExecutor):
             import qnexus as qnx
 
             self.qnx = qnx
-            self.project = qnx.projects.get_or_create(name=self.project_name)
+            with self._request("project"):
+                self.project = qnx.projects.get_or_create(name=self.project_name)
             qnx.context.set_active_project(self.project)
         return self.qnx
+
+    @contextmanager
+    def _request(self, label: str):
+        """Marks a request to Nexus as in progress while the block runs (used by the stall guard)."""
+        if self.stall_timeout is None:
+            yield
+            return
+        self._start_guard()
+        token = object()
+        with self._active_lock:
+            self._active[id(token)] = (label, time.monotonic())
+        try:
+            yield
+        finally:
+            with self._active_lock:
+                self._active.pop(id(token), None)
+
+    def _start_guard(self) -> None:
+        """Start the thread that ends the process when a request has not returned for ``stall_timeout`` seconds.
+
+        The age of a request is measured with the monotonic clock, which does not advance while the
+        computer sleeps, so that a sleep alone does not trigger the guard.
+        """
+        if self._guard is not None:
+            return
+
+        def watch():
+            while True:
+                time.sleep(min(5.0, self.stall_timeout / 4))
+                now = time.monotonic()
+                with self._active_lock:
+                    late = [(now - t0, label) for label, t0 in self._active.values() if now - t0 > self.stall_timeout]
+                if late:
+                    age, label = max(late)
+                    print(f"[stall guard] the request '{label}' to Nexus has not returned for {age:.0f} s; the process "
+                          f"ends with status {STALL_EXIT_STATUS} and can be started again (submitted jobs are re-attached)",
+                          file=sys.stderr, flush=True)
+                    os._exit(STALL_EXIT_STATUS)
+
+        self._guard = threading.Thread(target=watch, daemon=True, name="nexus-stall-guard")
+        self._guard.start()
 
     def _map(self, fn, items) -> list:
         """Apply ``fn`` to the items with a few threads (uploads and downloads wait on the network); order is kept."""
@@ -308,17 +368,19 @@ class NexusExecutor(_ProgramExecutor):
 
         The default waiting of the client keeps a websocket open and then polls with intervals of
         up to twenty minutes; a dropped connection or a slow poll would stall a campaign of many
-        short jobs.  Failed status requests (network, token refresh) are retried.
+        short jobs.  Failed status requests (network, token refresh) are retried; if they keep
+        failing, :class:`NexusUnreachable` is raised and the job stays re-attachable.
         """
         t0, failures = time.time(), 0
         while True:
             try:
-                state = str(self.qnx.jobs.status(job).status).split(".")[-1]
+                with self._request(f"status of {name}"):
+                    state = str(self.qnx.jobs.status(job).status).split(".")[-1]
                 failures = 0
             except Exception as exc:
                 failures += 1
                 if failures >= self.max_poll_failures:
-                    raise RuntimeError(f"status of job {name} unavailable after {failures} requests: {exc!r}") from exc
+                    raise NexusUnreachable(f"status of job {name} unavailable after {failures} requests: {exc!r}") from exc
                 state = "UNKNOWN"
             if state == "COMPLETED":
                 return
@@ -442,8 +504,13 @@ class NexusExecutor(_ProgramExecutor):
         for job_id, item in attach.items():
             stamp = time.strftime("%Y-%m-%dT%H:%M:%S%z")
             try:
-                job = qnx.jobs.get(id=job_id)
-            except Exception as exc:        # the job is gone: submit its programs again
+                with self._request(f"job {item['name']}"):
+                    job = qnx.jobs.get(id=job_id)
+            except Exception as exc:
+                if getattr(exc, "status_code", None) not in (404, 410):
+                    # no answer or a server error: the job may well exist, so nothing is submitted in its place
+                    raise NexusUnreachable(f"job {item['name']} could not be retrieved: {exc!r}") from exc
+                # the service no longer knows the job: submit its programs again
                 self._log(dict(event="reattach-failed", job_id=job_id, error=repr(exc)[:200], time=stamp))
                 continue
             jobs.append(dict(job=job, source="reattached", **item))
@@ -454,12 +521,17 @@ class NexusExecutor(_ProgramExecutor):
             part = todo[start:start + self.max_programs_per_job]
             self._counter += 1
             name = f"{self.run_name}-{self._counter:04d}-{label}-{time.strftime('%H%M%S')}"
-            refs = self._map(lambda j: qnx.circuits.upload(circuit=build_program(specs[j][0], specs[j][1], f"{name}-p{j}"),
-                                                           name=f"{name}-p{j}", project=self.project), part)
+            def upload(j, _name=name):
+                circuit = build_program(specs[j][0], specs[j][1], f"{_name}-p{j}")
+                with self._request(f"upload of {_name}-p{j}"):
+                    return qnx.circuits.upload(circuit=circuit, name=f"{_name}-p{j}", project=self.project)
+
+            refs = self._map(upload, part)
             shots = [int(specs[j][2]) for j in part]
             cost = [float(np.ceil(self.cost_margin * program_cost(specs[j][0], len(specs[j][1]), specs[j][2]))) for j in part]
-            job = qnx.start_execute_job(programs=refs, n_shots=shots, backend_config=cfg,
-                                        name=name, project=self.project, max_cost=cost)
+            with self._request(f"submission of {name}"):
+                job = qnx.start_execute_job(programs=refs, n_shots=shots, backend_config=cfg,
+                                            name=name, project=self.project, max_cost=cost)
             ref_ids = [str(r.id) for r in refs]
             jobs.append(dict(job=job, part=part, ref_ids=ref_ids, name=name, source="submitted"))
             self._log(dict(event="submitted", name=name, job_id=str(job.id), device=asdict(device),
@@ -475,23 +547,29 @@ class NexusExecutor(_ProgramExecutor):
         for item in handle["jobs"]:
             try:
                 self._wait(item["job"], item["name"])
+            except NexusUnreachable:
+                raise                   # the job itself is fine: the next run re-attaches to it
             except Exception as exc:
                 # an errored job is recorded so that a later run submits its programs again
                 # instead of re-attaching to it
                 self._log(dict(event="failed", name=item["name"], job_id=str(item["job"].id),
                                error=repr(exc)[:300], time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
                 raise
-            by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
-            def fetch(pair):
+            with self._request(f"results of {item['name']}"):
+                by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
+
+            def fetch(pair, _name=item["name"]):
                 j, ref_id = pair
-                res = by_input[ref_id].download_result()
+                with self._request(f"download of {_name}"):
+                    res = by_input[ref_id].download_result()
                 bits = program_bits(specs[j][0].n, len(specs[j][1]))
                 table = np.asarray(res.get_shots(cbits=bits), dtype=np.uint8)
                 np.savez_compressed(os.path.join(self.cache_dir, handle["keys"][j] + ".npz"), shots=table)
 
             self._map(fetch, zip(item["part"], item["ref_ids"]))
             try:
-                cost = float(qnx.jobs.cost(item["job"]))
+                with self._request(f"cost of {item['name']}"):
+                    cost = float(qnx.jobs.cost(item["job"]))
             except Exception:           # the cost is informative only
                 cost = float("nan")
             self.cost_charged += 0.0 if np.isnan(cost) else cost

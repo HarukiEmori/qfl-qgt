@@ -46,9 +46,20 @@ from qfedqgt.federated import LocalExecutor, Request, SharedExecutor, run_federa
 METHODS = ("QFedAvg", "QFedFisher", "QFedQGT")
 
 
+def eval_indices(y: np.ndarray, n_classes: int, per_class: int, block: int = 0) -> np.ndarray:
+    """Indices of a class-balanced block of test images: the images ``block * per_class`` to
+    ``(block + 1) * per_class - 1`` of every class (wrapping around at the end of a class)."""
+    out = []
+    for c in range(n_classes):
+        pool = np.flatnonzero(y == c)
+        out.append(pool[(block * per_class + np.arange(per_class)) % len(pool)])
+    return np.sort(np.concatenate(out))
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--scenarios", nargs="+", default=list(S.EMULATOR_SCENARIOS), choices=sorted(S.SCENARIOS))
+    ap.add_argument("--scenarios", nargs="+", default=None, choices=sorted(S.SCENARIOS),
+                    help="scenarios of the runs (default: those of the experiment that the campaign belongs to)")
     ap.add_argument("--seeds", nargs="+", type=int, default=None,
                     help="seeds of the runs (default: the seeds stored with the campaign, else those of the first campaign)")
     ap.add_argument("--methods", nargs="+", default=list(METHODS))
@@ -57,17 +68,23 @@ def main(argv=None) -> None:
     ap.add_argument("--project", default="QFedQGT", help="Nexus project name")
     ap.add_argument("--name", default=None, help="results sub-directory (default: emulator-<backend or device>)")
     ap.add_argument("--rounds", type=int, default=None, help="override the number of rounds (for tests)")
-    ap.add_argument("--segments", type=int, default=S.EMULATOR_SEGMENTS, help="circuits packed into one program")
+    ap.add_argument("--segments", type=int, default=None,
+                    help="circuits packed into one program (default: the value stored with the campaign, else that of the experiment)")
     ap.add_argument("--no-eval", action="store_true", help="skip the evaluation of the final models on the device")
-    ap.add_argument("--eval-inputs", type=int, default=S.EMULATOR_EVAL_INPUTS,
-                    help="test images used for the evaluation on the device (the same number from every class)")
-    ap.add_argument("--programs-per-job", type=int, default=S.EMULATOR_PROGRAMS_PER_JOB, help="programs of one Nexus job")
+    ap.add_argument("--eval-inputs", type=int, default=None,
+                    help="test images used for the evaluation on the device (the same number from every class; "
+                         "default: the value of the experiment)")
+    ap.add_argument("--programs-per-job", type=int, default=None,
+                    help="programs of one Nexus job (default: the value of the experiment)")
     ap.add_argument("--segments-schedule", nargs="*", default=[], metavar="CALL:SEGMENTS",
                     help="change of the packing during a campaign: from the given execution step on (1-based; one step "
                          "per round, then the evaluation), programs hold SEGMENTS circuits")
     ap.add_argument("--separate-runs", action="store_true",
                     help="never pack circuits of different runs into one program (runs can then be added later)")
     ap.add_argument("--timeout", type=float, default=12 * 3600.0, help="seconds to wait for one job")
+    ap.add_argument("--stall-timeout", type=float, default=600.0,
+                    help="seconds without an answer to a request after which the process ends with status 75, so that "
+                         "scripts/emulator_campaign.sh starts it again (0: never)")
     ap.add_argument("--cached-only", action="store_true", help="never submit a job; fail if a result is not in the cache")
     a = ap.parse_args(argv)
 
@@ -81,13 +98,23 @@ def main(argv=None) -> None:
     if os.path.exists(packing_file):
         with open(packing_file) as f:
             stored = json.load(f)
+    if a.scenarios is None:
+        a.scenarios = list(stored.get("scenarios", S.campaign_scenarios(name)))
+    if a.eval_inputs is None:
+        a.eval_inputs = S.eval_inputs(a.scenarios[0])
     if a.seeds is None:
-        a.seeds = list(stored.get("seeds", S.EMULATOR_CAMPAIGNS.get(name, S.EMULATOR_LOCAL.get(name, S.EMULATOR_SEEDS))))
-    if stored and not a.segments_schedule and a.segments == S.EMULATOR_SEGMENTS:
+        a.seeds = list(stored.get("seeds", S.campaign_seeds(name)))
+    experiment = S.experiment_of(a.scenarios[0])
+    if a.programs_per_job is None:
+        a.programs_per_job = experiment["programs_per_job"]
+    if stored and not a.segments_schedule and a.segments is None:
         a.segments, a.segments_schedule = stored["segments"], stored["segments_schedule"]
-    elif a.backend == "nexus" and not a.cached_only:
+    else:
+        a.segments = experiment["segments"] if a.segments is None else a.segments
+    if a.backend == "nexus" and not a.cached_only and not stored:
         with open(packing_file, "w") as f:
-            json.dump(dict(seeds=list(a.seeds), segments=a.segments, segments_schedule=list(a.segments_schedule)), f, indent=1)
+            json.dump(dict(scenarios=list(a.scenarios), seeds=list(a.seeds), segments=a.segments,
+                           segments_schedule=list(a.segments_schedule)), f, indent=1)
     runs = [(sc, seed) for sc in a.scenarios for seed in a.seeds]
     schedule = tuple((int(x.split(":")[0]), int(x.split(":")[1])) for x in a.segments_schedule)
     device_factory, executor = None, LocalExecutor()
@@ -100,7 +127,8 @@ def main(argv=None) -> None:
         else:
             executor = NexusExecutor(a.project, os.path.join(out_dir, "cache"), segments=a.segments,
                                      run_name=name, timeout=a.timeout, max_programs_per_job=a.programs_per_job,
-                                     segments_schedule=schedule, cached_only=a.cached_only)
+                                     segments_schedule=schedule, cached_only=a.cached_only,
+                                     stall_timeout=a.stall_timeout if a.stall_timeout > 0 and not a.cached_only else None)
             device_factory = lambda scale, role, k: DeviceProfile(a.device, scale)               # noqa: E731
 
     # -- setup of every run
@@ -169,19 +197,25 @@ def main(argv=None) -> None:
 
         # -- evaluation of the models of the last rounds on the reference profile of the device,
         #    on a class-balanced subset of the test images (the noiseless accuracy uses all of them)
+        #    With ``eval_rotate`` every evaluated round uses its own block of test images, so that the rounds
+        #    together cover ``tail`` times as many images.
         evals = {}
+        rotate = bool(experiment.get("eval_rotate", False))
         for s in setups:
-            y = s["ds"].y_test
-            per_class = max(1, a.eval_inputs // len(s["sc"].classes))
-            s["eval_idx"] = np.sort(np.concatenate([np.flatnonzero(y == c)[:per_class] for c in range(len(s["sc"].classes))]))
+            n_classes = len(s["sc"].classes)
+            per_class = max(1, a.eval_inputs // n_classes)
+            rounds = s["cfg"].rounds
+            s["eval_rounds"] = list(range(max(1, rounds + 1 - tail), rounds + 1))
+            s["eval_idx"] = {r: eval_indices(s["ds"].y_test, n_classes, per_class, j if rotate else 0)
+                             for j, r in enumerate(s["eval_rounds"])}
         if not a.no_eval:
             reqs = []
             for i, s in enumerate(setups):
                 t = s["model"].template
                 for m in a.methods:
                     thetas = results[i][m]["theta"]
-                    for r in range(max(1, len(thetas) - tail), len(thetas)):
-                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test[s["eval_idx"]], thetas[r]),
+                    for r in s["eval_rounds"]:
+                        req = Request(s["eval_device"], t, t.angles(s["ds"].X_test[s["eval_idx"][r]], thetas[r]),
                                       s["cfg"].eval_shots, tag="eval", group=i if a.separate_runs else 0)
                         evals[(i, m, r)] = req
                         reqs.append(req)
@@ -203,7 +237,7 @@ def main(argv=None) -> None:
                 acc_dev = []
                 for r in rounds:
                     phi = evals[(i, m, r)].counts[0] @ s["model"].obs / s["cfg"].eval_shots
-                    acc_dev.append(float((s["model"].predict(phi) == s["ds"].y_test[s["eval_idx"]]).mean()))
+                    acc_dev.append(float((s["model"].predict(phi) == s["ds"].y_test[s["eval_idx"][r]]).mean()))
                 flat[f"{m}/eval_rounds"] = np.array(rounds)
                 flat[f"{m}/acc_device"] = np.array(acc_dev)
                 row["final"][m] = dict(accuracy_device=float(np.mean(acc_dev)) if acc_dev else None,

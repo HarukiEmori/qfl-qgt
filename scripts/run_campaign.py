@@ -150,7 +150,7 @@ def select(scenarios) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=["tune", "select", "main", "sens"])
-    ap.add_argument("--scenarios", nargs="+", default=sorted(S.SIMULATION_SCENARIOS), choices=sorted(S.SCENARIOS))
+    ap.add_argument("--scenarios", nargs="+", default=sorted(S.simulation_scenarios()), choices=sorted(S.SCENARIOS))
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
     a = ap.parse_args()
     if a.stage == "select":
