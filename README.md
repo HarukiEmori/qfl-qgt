@@ -64,6 +64,25 @@ figures and tables.
    data share and `zeta^2` the between-client variance estimated from the reported updates.  The weights of
    a round are computed from the statistics of earlier rounds.
 
+### Properties of the implementation that the paper states
+
+- **Gradient estimate.**  The parameter-shifted circuits give unbiased estimates of the derivatives of the
+  features.  The derivative of the loss with respect to the features is evaluated at the features measured with
+  the unshifted circuit (`VQC.per_sample_gradients`).  For the softmax cross-entropy the mean of the estimate
+  therefore differs from the exact gradient by a bias of order `1/M_k`, where `M_k` is the number of shots per
+  circuit.
+- **Minibatches.**  A minibatch is drawn without replacement from the local samples, with a generator seeded by
+  (seed, round, client), and all methods therefore see the same minibatches.  The reported `sigma_k^2` then
+  overestimates the sampling part of the variance by the factor `1/(1 - B/n_k)`.
+- **Preconditioner.**  The Fubini-Study metric of the noiseless circuit is computed classically and averaged over
+  the first 8 inputs of the minibatch (`RunConfig.metric_inputs`).  The noise strength is inferred from the echo
+  counts accumulated up to the current round, it is 1 for a frequency below `1/N`, and it is capped at 0.9.
+- **Gate-level noise model.**  Unshifted, parameter-shifted, evaluation and two-copy circuits carry a phase flip
+  of every qubit after every entangling layer.  The echo circuits of the model carry no phase flips
+  (`Template.echo`).
+- **Cost estimate.**  `cost_formula_hqc` counts the `Rz` gates as one-qubit operations.  The service did not
+  charge for them (28,579 HQC charged against 30,186 HQC for the two-class experiment).
+
 ## Installation
 
 ```bash
