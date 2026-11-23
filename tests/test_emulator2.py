@@ -73,3 +73,32 @@ def test_design_study_contains_the_chosen_design_and_its_cost():
     # every candidate has a matched multiplier for its number of qubits
     for name, (c, _) in design.CANDIDATES.items():
         assert (max(c.gate_scales), max(c.local_scales)) == S.EMULATOR2_NOISE[c.n_qubits], name
+
+
+def test_prediction_probability_matches_the_enumeration_of_all_counts():
+    import itertools
+    import math
+
+    import numpy as np
+
+    from qfedqgt import sim
+
+    spec = importlib.util.spec_from_file_location("emulator_model_comparison", os.path.join(ROOT, "scripts", "emulator_model_comparison.py"))
+    comparison = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(comparison)
+    obs = sim.z_observables(2, pairs=False)[:, :2]            # the readout of the two-class model on two qubits
+    rng = np.random.default_rng(3)
+    p = rng.dirichlet(np.ones(4), size=5)
+    p[0] = [0.0, 1.0, 0.0, 0.0]                               # a deterministic outcome
+    p[1] = [0.5, 0.0, 0.0, 0.5]                               # only outcomes on which the two observables agree: always a tie
+    for shots in (1, 4, 7):
+        exact = np.zeros(len(p))
+        for counts in itertools.product(range(shots + 1), repeat=4):
+            if sum(counts) != shots:
+                continue
+            coefficient = math.factorial(shots) / math.prod(math.factorial(c) for c in counts)
+            phi = np.array(counts) @ obs / shots
+            if int(np.argmax(phi)) == 0:                      # the prediction of the model, with class 0 for a tie
+                exact += coefficient * np.prod(p ** np.array(counts), axis=1)
+        assert np.allclose(comparison.prediction_probability(p, obs, shots), exact, atol=1e-12)
+    assert comparison.prediction_probability(p[1:2], obs, 50)[0] == 1.0
