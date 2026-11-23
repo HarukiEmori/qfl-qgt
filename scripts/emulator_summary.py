@@ -66,7 +66,8 @@ def paired(runs, method, key, reference="QFedQGT") -> dict:
     """Difference reference - method in percentage points over the given runs."""
     d = 100.0 * np.array([r["final"][reference][key] - r["final"][method][key] for r in runs])
     m, se = mean_se(d)
-    return dict(mean=m, se=se, higher=int((d > 0).sum()), n=len(d))
+    sign = np.sign(np.round(d, 9))          # accuracies are ratios of small integers: equal values count as equal
+    return dict(mean=m, se=se, higher=int((sign > 0).sum()), equal=int((sign == 0).sum()), n=len(d))
 
 
 def per_seed(runs, method, key, reference="QFedQGT") -> dict:
@@ -100,7 +101,7 @@ def summarize(directories) -> dict:
                 p = paired(sub, m, key)
                 row["difference"][m][name] = p
                 line = (f"  QFedQGT - {m:11s} ({name:9s}) {p['mean']:+5.1f} +/- {p['se']:4.1f} points, "
-                        f"higher in {p['higher']:2d} of {p['n']} seeds")
+                        f"higher in {p['higher']:2d} of {p['n']} seeds" + (f" (equal in {p['equal']})" if p["equal"] else ""))
                 if len(directories) > 1:
                     parts = []
                     for d in directories:

@@ -205,7 +205,9 @@ def emulator(directories=None, out=None, methods=("QFedAvg", "QFedFisher", "QFed
     fig, ax = plt.subplots(1, n_panels, figsize=(3.3 * n_panels, 2.7), squeeze=False, sharey=True)
     for j, scenario in enumerate(scenarios):
         sc = S.SCENARIOS[scenario]
-        title = f"({letters[j]}) " + ("IID data" if sc.alpha is None else "Dirichlet partition")
+        # an experiment with one data partition names the content of the panel, the others name the partition
+        title = f"({letters[j]}) " + ("Accuracy after every round" if seeds_panel
+                                      else "IID data" if sc.alpha is None else "Dirichlet partition")
         res = load_runs(directories or campaign_dirs(experiment), scenario)
         for m in methods:
             if m not in res:

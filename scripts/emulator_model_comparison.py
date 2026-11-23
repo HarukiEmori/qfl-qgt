@@ -12,9 +12,12 @@ the prediction of the plan (``results/sim-emulator2_iid``), and reports
 3. a check of the evaluation on the emulator: for the parameters trained on the emulator and the test
    images of the evaluation, the accuracy of the noiseless circuit, the expected accuracy when the
    features are estimated from the shots of the evaluation on the reference device of the local model,
-   and the accuracy measured on the emulator,
+   and the accuracy measured on the emulator; and the deviation of every measured accuracy (one per
+   seed, method and evaluated round) from its expectation in units of its standard deviation,
 4. the noiseless accuracy of the global models after every round, and the estimated noise strengths and
-   aggregation weights of QFedQGT.
+   aggregation weights of QFedQGT,
+5. if a result of the evaluation was downloaded again after an incomplete first download
+   (``scripts/nexus_redownload.py``): the accuracies that the incomplete result gives, for the record.
 
     python scripts/emulator_model_comparison.py
 
@@ -40,6 +43,7 @@ sys.path.insert(0, ROOT)
 from qfedqgt import scenarios as S                                # noqa: E402
 from qfedqgt import sim                                           # noqa: E402
 from qfedqgt.experiment import build                              # noqa: E402
+from qfedqgt.nexus import _shots_to_counts, job_log, redownloaded  # noqa: E402
 
 SCENARIO = "emulator2_iid"
 EMULATOR, LOCAL = "emulator2-reimei-E", "emulator2-local"
@@ -82,7 +86,57 @@ def _mean_se(x) -> dict:
 
 def _paired(a, b) -> dict:
     d = 100.0 * (np.asarray(a, float) - np.asarray(b, float))
-    return dict(mean=float(d.mean()), se=float(d.std(ddof=1) / np.sqrt(len(d))), higher=int((d > 0).sum()), n=len(d))
+    sign = np.sign(np.round(d, 9))              # accuracies are ratios of small integers: equal values count as equal
+    return dict(mean=float(d.mean()), se=float(d.std(ddof=1) / np.sqrt(len(d))), higher=int((sign > 0).sum()),
+                equal=int((sign == 0).sum()), n=len(d))
+
+
+def _deviation(measured, expected, sd) -> dict:
+    """Summary of (measured - expected) / sd over the evaluations with a nonzero standard deviation."""
+    measured, expected, sd = (np.asarray(x, float).ravel() for x in (measured, expected, sd))
+    z = (measured - expected)[sd > 0] / sd[sd > 0]
+    return dict(evaluations=int(len(z)), mean=float(z.mean()), rms=float(np.sqrt((z ** 2).mean())),
+                beyond_3=int((np.abs(z) > 3).sum()), beyond_5=int((np.abs(z) > 5).sum()))
+
+
+def evaluation_tables(cache: str, shots: int, incomplete: bool = False) -> list:
+    """Shot tables of the evaluation jobs of a campaign, in the order of their circuits.
+
+    With ``incomplete=True`` a table that was downloaded again is replaced by the table of the first download,
+    which ``scripts/nexus_redownload.py`` keeps in ``<cache>/incomplete/``.
+    """
+    again = {r["key"] for r in redownloaded(cache)} if incomplete else set()
+    tables = []
+    for rec in job_log(cache):
+        if rec.get("event") == "submitted" and rec.get("shots") == [shots]:
+            for key in rec["keys"]:
+                folder = os.path.join(cache, "incomplete") if key in again else cache
+                tables.append(np.load(os.path.join(folder, key + ".npz"))["shots"])
+    return tables
+
+
+def accuracy_from_tables(tables: list, setups: list, n_qubits: int) -> np.ndarray:
+    """Accuracies (seed, method, evaluated round) from the shot tables of the evaluation.
+
+    The circuits of the evaluation follow each other in the order of ``scripts/run_emulator.py``: seed, method,
+    evaluated round, test image.  ``setups`` lists ``(model, labels of the images of every evaluated round)``
+    for the seeds.
+    """
+    counts = np.concatenate([_shots_to_counts(t.astype(np.int64), n_qubits, t.shape[1] // n_qubits, 1)[0] for t in tables])
+    out, pos = [], 0
+    for model, labels in setups:
+        rows = []
+        for _ in METHODS:
+            row = []
+            for y in labels:
+                c = counts[pos:pos + len(y)]
+                row.append(float((model.predict(c @ model.obs / c.sum(axis=1, keepdims=True)) == y).mean()))
+                pos += len(y)
+            rows.append(row)
+        out.append(rows)
+    if pos != len(counts):
+        raise SystemExit(f"the evaluation tables hold {len(counts)} circuits, and the runs have {pos}")
+    return np.array(out)
 
 
 def _load(name: str) -> dict:
@@ -141,27 +195,61 @@ def compare() -> dict:
     noise = sim.NoiseModel.reimei()
     blocks = {m: [] for m in METHODS}
     expected = {m: [] for m in METHODS}
+    exp_round, sd_round, setups = {m: [] for m in METHODS}, {m: [] for m in METHODS}, []
     for s in seeds:
         model, _, _, ds, _ = build(sc, s)
         t = model.template
+        labels = []
         for m in METHODS:
             theta = emu[s][f"{m}/theta"]
-            a, b = [], []
+            a, b, c = [], [], []
             for j, r in enumerate(rounds):
                 idx = runner.eval_indices(ds.y_test, n_classes, per_class, j if experiment["eval_rotate"] else 0)
                 X, y = ds.X_test[idx], ds.y_test[idx]
                 a.append(model.accuracy_exact(X, y, theta[r]))
                 p = sim.probabilities(sim.density(t, t.angles(X, theta[r]), noise), noise, t.n)
                 p0 = prediction_probability(p, model.obs, cfg.eval_shots)
-                b.append(float(np.where(y == 0, p0, 1.0 - p0).mean()))
+                correct = np.where(y == 0, p0, 1.0 - p0)              # probability of a correct prediction of every image
+                b.append(float(correct.mean()))
+                c.append(float(np.sqrt((correct * (1.0 - correct)).sum()) / len(y)))
+                if m == METHODS[0]:
+                    labels.append(y)
             blocks[m].append(np.mean(a))
             expected[m].append(np.mean(b))
+            exp_round[m].append(b)
+            sd_round[m].append(c)
+        setups.append((model, labels))
+    measured_round = {m: np.array([emu[s][f"{m}/acc_device"] for s in seeds]) for m in METHODS}
     out["evaluation"] = dict(shots=cfg.eval_shots, images=experiment["eval_inputs"] * tail, methods={})
     for m in METHODS:
         out["evaluation"]["methods"][m] = dict(noiseless_on_the_evaluation_images=float(np.mean(blocks[m])),
                                                expected_with_shots=float(np.mean(expected[m])),
                                                measured=float(device["emulator"][m].mean()),
                                                measured_minus_expected=_paired(device["emulator"][m], expected[m]))
+    # every measured accuracy (seed, method, evaluated round) against its expectation, in units of its standard deviation
+    stack = lambda d: np.array([d[m] for m in METHODS])                                   # noqa: E731
+    out["evaluation"]["standardized_deviation"] = _deviation(stack(measured_round), stack(exp_round), stack(sd_round))
+
+    # -- the stored accuracies follow from the shot tables of the evaluation; a result that was downloaded again
+    cache = os.path.join(ROOT, "results", EMULATOR, "cache")
+    n_qubits = setups[0][0].template.n
+    from_tables = accuracy_from_tables(evaluation_tables(cache, cfg.eval_shots), setups, n_qubits)      # (seed, method, round)
+    stored = np.array([[emu[s][f"{m}/acc_device"] for m in METHODS] for s in seeds])
+    if not np.allclose(from_tables, stored, atol=1e-12):
+        raise SystemExit("the stored accuracies do not follow from the shot tables of the evaluation")
+    again = redownloaded(cache)
+    if again:
+        first = accuracy_from_tables(evaluation_tables(cache, cfg.eval_shots, incomplete=True), setups, n_qubits)
+        final = {m: first[:, i].mean(axis=1) for i, m in enumerate(METHODS)}
+        zero = np.zeros(len(seeds))
+        out["incomplete_download"] = dict(
+            results=[dict(job=r["name"], shots_before=r["shots_before"], shots_after=r["shots_after"],
+                          stored_shots_are_the_first_shots=r.get("stored_shots_are_the_first_shots"), time=r["time"]) for r in again],
+            seeds_with_a_changed_accuracy=[int(s) for s, a, b in zip(seeds, first, stored) if not np.allclose(a, b)],
+            accuracy_with_the_incomplete_result={m: _mean_se(final[m]) for m in METHODS},
+            difference_with_the_incomplete_result={m: _paired(final["QFedQGT"] - final[m], zero) for m in METHODS[:2]},
+            standardized_deviation_with_the_incomplete_result=_deviation(
+                np.transpose(first, (1, 0, 2)), stack(exp_round), stack(sd_round)))
 
     # -- noiseless accuracy after every round, mean over the seeds
     curves = {m: np.array([emu[s][f"{m}/acc_exact"] for s in seeds]).mean(axis=0) for m in METHODS}
@@ -199,7 +287,7 @@ def report(out: dict) -> None:
     print("QFedQGT minus baseline (percentage points)")
     for m in METHODS[:2]:
         d = diff[m]
-        print(f"  {m:11s} emulator {d['emulator']['mean']:+5.1f} +/- {d['emulator']['se']:.1f} (higher in {d['emulator']['higher']} of {d['emulator']['n']});"
+        print(f"  {m:11s} emulator {d['emulator']['mean']:+5.1f} +/- {d['emulator']['se']:.1f} (higher in {d['emulator']['higher']} of {d['emulator']['n']}, equal in {d['emulator']['equal']});"
               f" model, same procedure {d['model_same_procedure']['mean']:+5.1f} +/- {d['model_same_procedure']['se']:.1f};"
               f" prediction {d['model_prediction']['mean']:+5.1f} +/- {d['model_prediction']['se']:.1f}")
         print(f"  {'':11s} emulator minus model, same procedure {d['emulator_minus_model_same_procedure']['mean']:+5.1f} +/- {d['emulator_minus_model_same_procedure']['se']:.1f};"
@@ -210,6 +298,20 @@ def report(out: dict) -> None:
         e = ev["methods"][m]
         print(f"  {m:11s} noiseless {e['noiseless_on_the_evaluation_images']:.3f}   expected with the shots {e['expected_with_shots']:.3f}   measured {e['measured']:.3f}"
               f"   measured minus expected {e['measured_minus_expected']['mean']:+5.1f} +/- {e['measured_minus_expected']['se']:.1f}")
+    z = ev["standardized_deviation"]
+    print(f"  measured minus expected in units of its standard deviation, {z['evaluations']} evaluations: mean {z['mean']:+.2f}, "
+          f"rms {z['rms']:.2f}, beyond 3: {z['beyond_3']}, beyond 5: {z['beyond_5']}")
+    if "incomplete_download" in out:
+        inc = out["incomplete_download"]
+        for r in inc["results"]:
+            print(f"result downloaded again: job {r['job']}, {r['shots_before']} -> {r['shots_after']} shots")
+        z = inc["standardized_deviation_with_the_incomplete_result"]
+        print("  with the incomplete result (for the record): "
+              + "  ".join(f"{m} {inc['accuracy_with_the_incomplete_result'][m]['mean']:.3f} +/- {inc['accuracy_with_the_incomplete_result'][m]['se']:.3f}" for m in METHODS)
+              + "; QFedQGT minus baseline "
+              + ", ".join(f"{d['mean']:+.1f} +/- {d['se']:.1f} (higher in {d['higher']})" for d in inc["difference_with_the_incomplete_result"].values())
+              + f"; deviations: rms {z['rms']:.2f}, beyond 3: {z['beyond_3']} of {z['evaluations']}")
+        print(f"  seeds with a changed accuracy: {inc['seeds_with_a_changed_accuracy']}")
     print("rounds in which QFedQGT has the highest mean noiseless accuracy:", out["rounds_with_qfedqgt_highest"])
     for thr, rows in out["first_round_with_mean_at_least"].items():
         print(f"  first round with a mean noiseless accuracy of at least {thr}: " + ", ".join(f"{m} {rows[m]}" for m in METHODS))

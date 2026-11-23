@@ -102,3 +102,46 @@ def test_prediction_probability_matches_the_enumeration_of_all_counts():
                 exact += coefficient * np.prod(p ** np.array(counts), axis=1)
         assert np.allclose(comparison.prediction_probability(p, obs, shots), exact, atol=1e-12)
     assert comparison.prediction_probability(p[1:2], obs, 50)[0] == 1.0
+
+
+def _comparison():
+    spec = importlib.util.spec_from_file_location("emulator_model_comparison", os.path.join(ROOT, "scripts", "emulator_model_comparison.py"))
+    comparison = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(comparison)
+    return comparison
+
+
+def test_accuracies_follow_from_the_evaluation_tables_in_the_order_of_the_circuits():
+    import types
+
+    import numpy as np
+
+    comparison = _comparison()
+    # a readout that predicts class 0 for the outcome 00 and class 1 for the outcome 11
+    model = types.SimpleNamespace(obs=np.array([[1.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 1.0]]),
+                                  predict=lambda phi: np.argmax(phi, axis=-1))
+    rng = np.random.default_rng(1)
+    n_seeds, n_methods, n_rounds, n_images, shots = 2, len(comparison.METHODS), 2, 3, 5
+    predicted = rng.integers(0, 2, size=(n_seeds, n_methods, n_rounds, n_images))
+    labels = rng.integers(0, 2, size=(n_seeds, n_rounds, n_images))
+    bits = np.repeat(predicted.reshape(-1), 2)                # two qubits per circuit, both bits equal to the class
+    table = np.tile(bits, (shots, 1)).astype(np.uint8)
+    cut = 2 * 7                                               # the first program holds seven circuits
+    setups = [(model, list(labels[i])) for i in range(n_seeds)]
+    accuracy = comparison.accuracy_from_tables([table[:, :cut], table[:, cut:]], setups, 2)
+    assert accuracy.shape == (n_seeds, n_methods, n_rounds)
+    assert np.allclose(accuracy, (predicted == labels[:, None]).mean(axis=3))
+    # fewer shots in the first table (an incomplete download) change nothing for deterministic outcomes
+    short = comparison.accuracy_from_tables([table[:2, :cut], table[:, cut:]], setups, 2)
+    assert np.allclose(short, accuracy)
+
+
+def test_deviation_summary_counts_the_large_deviations():
+    import numpy as np
+
+    comparison = _comparison()
+    z = comparison._deviation([0.5, 0.9, 0.1, 0.7], [0.5, 0.5, 0.5, 0.7], [0.1, 0.1, 0.1, 0.0])
+    assert z["evaluations"] == 3 and z["beyond_3"] == 2 and z["beyond_5"] == 0     # the last evaluation has no spread
+    assert np.isclose(z["mean"], 0.0) and np.isclose(z["rms"], np.sqrt(32.0 / 3.0))
+    d = comparison._paired([0.93, 0.80, 0.70], [0.93, 0.75, 0.90])
+    assert (d["higher"], d["equal"], d["n"]) == (1, 1, 3)
