@@ -591,11 +591,11 @@ def test_rewrite_from_the_cache_after_a_repair(tmp_path, monkeypatch, capsys):
     path = os.path.join(cache, evaluation[0]["keys"][0] + ".npz")
     np.savez_compressed(path, shots=np.load(path)["shots"][:12])
     stale = dict(first)
-    stale["QFedAvg/acc_device"] = np.zeros_like(first["QFedAvg/acc_device"])
+    stale["QFedAvg/acc_device"] = np.full_like(first["QFedAvg/acc_device"], -1.0)     # a value that no accuracy has
     np.savez_compressed(run_file, **stale)
     summary = json.load(open(os.path.join(out, "summary.json")))
     summary["seconds"], summary["usage"]["cost_charged_hqc"] = 123.0, 45.6
-    summary["runs"][0]["final"]["QFedAvg"]["accuracy_device"] = 0.0
+    summary["runs"][0]["final"]["QFedAvg"]["accuracy_device"] = -1.0
     with open(os.path.join(out, "summary.json"), "w") as f:
         json.dump(summary, f)
     with pytest.raises(NexusIncompleteResult):
