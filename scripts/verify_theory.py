@@ -98,7 +98,7 @@ def check_invariance():
     Pk = np.linalg.inv(Gk + eps * np.trace(Gk) / np.trace(G) * np.eye(t.n_params))
     lhs = Pk @ grad_k
     rhs = (1 + 2 * p / (N * (1 - p))) * np.linalg.solve(G + eps * np.eye(t.n_params), JTu)
-    report("Proposition (device-invariant update)", np.abs(lhs - rhs).max() < 1e-9 and np.abs(grad_k - (1 - p) * JTu).max() < 1e-9,
+    report("Proposition (natural gradient under depolarizing noise)", np.abs(lhs - rhs).max() < 1e-9 and np.abs(grad_k - (1 - p) * JTu).max() < 1e-9,
            f"max dev {np.abs(lhs - rhs).max():.1e}")
 
 
