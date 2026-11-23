@@ -37,9 +37,11 @@ figures and tables.
 | `scripts/emulator_multiplier_check.py` | Echo frequency of the noisy clients in the pre-check run, the matched multiplier of the local model, and the step sizes and prediction of the two-class experiment at several multipliers |
 | `scripts/emulator_summary.py` | Final accuracies and paired differences of the emulator experiments |
 | `scripts/emulator_model_comparison.py` | Two-class experiment on the emulator against the local model: accuracies, paired differences, and a check of every measured evaluation against its expectation |
+| `scripts/gradient_bias.py` | Bias of the gradient estimate at a finite number of shots in the two-class experiment, evaluated without sampling in the local model |
 | `scripts/nexus_redownload.py` | Finds stored results with fewer shots than their jobs requested and downloads them again (submits nothing) |
 | `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
 | `scripts/nexus_metric.py` | Two-copy measurement of a block of the Bures metric on the emulator |
+| `scripts/metric_decomposition.py` | The two-copy estimate in the local model as four blocks: Bures metric of the state, estimate from the exact overlaps of the states, estimate from the noisy two-copy circuits with a perfect readout, estimate from the noisy two-copy circuits |
 | `scripts/nexus_position.py` | Survival of an echo circuit against its position in a packed program |
 | `scripts/nexus_job_times.py` | Waiting and execution times of the jobs of a campaign |
 | `scripts/nexus_smoke.py` | Smallest job on a Quantinuum backend (run before a campaign) |
@@ -71,6 +73,10 @@ figures and tables.
   the unshifted circuit (`VQC.per_sample_gradients`).  For the softmax cross-entropy the mean of the estimate
   therefore differs from the exact gradient by a bias of order `1/M_k`, where `M_k` is the number of shots per
   circuit.
+  In the local model of the devices of the two-class experiment, at the parameters of the emulator runs of QFedQGT,
+  the relative bias `|E[g_hat] - grad f| / |grad f|` has the median 0.27 for the reference clients (16 shots) and
+  0.43 for the noisy clients (1 shot).  The medians are 0.02 and 0.07 in rounds 1 to 5 and 0.36 and 0.67 in rounds
+  16 to 25 (`scripts/gradient_bias.py`, `results/emulator2-gradient-bias.json`).
 - **Minibatches.**  A minibatch is drawn without replacement from the local samples, with a generator seeded by
   (seed, round, client), and all methods therefore see the same minibatches.  The reported `sigma_k^2` then
   overestimates the sampling part of the variance by the factor `1/(1 - B/n_k)`.
@@ -148,6 +154,8 @@ python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator
 python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator2-reimei-E --cached-only   # two-class experiment
 python scripts/emulator_summary.py                                                      # accuracies and paired differences
 python scripts/emulator_model_comparison.py                                             # two-class experiment against the local model
+python scripts/metric_decomposition.py --check                                          # two-copy estimate in the local model, step by step
+python scripts/gradient_bias.py --check                                                 # bias of the gradient estimate, two-class experiment
 python scripts/nexus_redownload.py --all                                                # shots of every stored result against its job
 python scripts/make_figures.py emulator
 python scripts/make_figures.py emulator2
@@ -205,6 +213,7 @@ later.
 | :-- | :-- |
 | `results/nexus-geometry/reimei-E.json`, `reimei-E-emulator_iid.json` | Frequency of the all-zero outcome of echo circuits for several error-rate multipliers, the inferred noise strength, and the multiplier at which the local gate-level model has the same frequency |
 | `results/metric/reimei-E.json` | Two-copy measurement of the 8 x 8 block of the Bures metric of one layer (137 circuits on 8 qubits, 200 shots) |
+| `results/metric/decomposition.json` | The same block in the local gate-level model, as the attenuation with respect to the noiseless metric at the multipliers 1 and 50: Bures metric of the state (0.993 and 0.685), two-copy estimate from the exact overlaps of the states (0.991 and 0.621), estimate from the noisy two-copy circuits with a perfect readout (0.988 and 0.550), and estimate from the noisy two-copy circuits (0.978 and 0.545).  The first step is the conversion of the Hilbert-Schmidt block, which is exact for global depolarizing noise and not for the gate-level noise of the model; the other two steps are the gate errors and the readout errors of the SWAP test.  The phase flips after the last gate of the SWAP test precede the measurement and have no effect |
 | `results/nexus-position/reimei-E.json` | Frequency of the all-zero outcome of 600 copies of one echo circuit in a single program, for every position: the change from the first to the last circuit is -0.0024 ± 0.0018 at the reference error rates and +0.003 ± 0.010 at 300-fold error rates |
 | `results/emulator-design/` | Candidate designs of the two-class experiment in the local model: circuits on two, three and four qubits, numbers of noisy clients, minibatch sizes, shots, and Dirichlet partitions (step sizes on the tuning seeds 100 to 131, comparison on the seeds 200 to 215) |
 | `results/nexus-geometry/reimei-E-calibration_n2.json`, `...-calibration_n3.json` | Echo survival of the one-layer circuits on two and three qubits for error-rate multipliers from 1 to 700, with the matched multipliers of the local model.  For the two-qubit circuit the survival is 0.314 ± 0.016 at the multiplier 400 and falls below 1/4, the value of the maximally mixed state, at 600 and 700 |
@@ -214,6 +223,7 @@ later.
 | `results/emulator2-reimei-E/` | Two-class experiment on the emulator: eight clients (two reference clients with 16 shots per circuit, six clients with 400-fold error rates and one shot), digits 0 and 1, one layer on two qubits, 25 rounds, IID data, seeds 0 to 15 in one campaign of 352 jobs.  `redownload.log` and `provenance-rewrite.json` record the result that was downloaded again (see below) |
 | `results/emulator2-local/`, `results/sim-emulator2_iid/`, `results/sens-emulator2_iid/` | The two-class experiment in the local gate-level model: the same runs with the evaluation procedure of the emulator, the prediction of `plans/emulator2.md`, and every step size of the grids |
 | `results/emulator2-summary.json`, `results/emulator2-comparison.json` | Accuracies and paired differences of the two-class experiment, and its comparison with the local model (`scripts/emulator_summary.py`, `scripts/emulator_model_comparison.py`) |
+| `results/emulator2-gradient-bias.json` | Relative bias of the gradient estimate and its cosine with the gradient in the local model of the devices, for every client, round and seed at the parameters of the three methods on the emulator (`scripts/gradient_bias.py`) |
 
 **Run records.**  Every script that executes circuits ends by showing a run record and saves it next to its
 results (`provenance.json`): which program produced the result (repository, commit, state of the working tree,
