@@ -554,3 +554,71 @@ def test_a_result_that_is_still_incomplete_is_not_used_for_a_repair(tmp_path, mo
     assert redownload_incomplete(cache, qnx=fake, log=messages.append) == []
     assert np.array_equal(np.load(path)["shots"], full[:2]) and not os.path.exists(os.path.join(cache, "incomplete"))
     assert len(incomplete_tables(cache)) == 1 and "not replaced" in messages[0]
+
+
+def test_rewrite_from_the_cache_after_a_repair(tmp_path, monkeypatch, capsys):
+    import importlib.util
+
+    fake = FakeQnx()
+    fake.pattern = True
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import NexusIncompleteResult, redownload_incomplete
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    spec = importlib.util.spec_from_file_location("run_emulator_rewrite", os.path.join(root, "scripts", "run_emulator.py"))
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+    monkeypatch.setattr(runner, "ROOT", str(tmp_path))
+    args = ["--backend", "nexus", "--name", "tiny", "--scenarios", "emulator2_iid", "--seeds", "900", "--rounds", "1",
+            "--eval-inputs", "4", "--stall-timeout", "0"]
+    out = os.path.join(str(tmp_path), "results", "tiny")
+    cache = os.path.join(out, "cache")
+
+    # 1. the run on the (stand-in) device
+    runner.main(args)
+    n_jobs = len(fake.started)
+    run_file = os.path.join(out, "emulator2_iid-seed900.npz")
+    first = {k: v for k, v in np.load(run_file).items()}
+    record = open(os.path.join(out, "provenance.json")).read()
+    assert n_jobs > 0 and "results_downloaded_again" not in json.load(open(os.path.join(out, "summary.json")))
+    with pytest.raises(SystemExit):
+        runner.main(args + ["--rewrite"])                         # --rewrite requires --cached-only
+
+    # 2. the state after an incomplete download of the evaluation result: a table with 12 of the 100 shots, and
+    #    result files that were computed with it
+    evaluation = [e for e in _events(cache) if e["event"] == "submitted" and e["program_shots"] == [100]]
+    assert len(evaluation) == 1
+    path = os.path.join(cache, evaluation[0]["keys"][0] + ".npz")
+    np.savez_compressed(path, shots=np.load(path)["shots"][:12])
+    stale = dict(first)
+    stale["QFedAvg/acc_device"] = np.zeros_like(first["QFedAvg/acc_device"])
+    np.savez_compressed(run_file, **stale)
+    summary = json.load(open(os.path.join(out, "summary.json")))
+    summary["seconds"], summary["usage"]["cost_charged_hqc"] = 123.0, 45.6
+    summary["runs"][0]["final"]["QFedAvg"]["accuracy_device"] = 0.0
+    with open(os.path.join(out, "summary.json"), "w") as f:
+        json.dump(summary, f)
+    with pytest.raises(NexusIncompleteResult):
+        runner.main(args + ["--cached-only"])                     # the executor refuses the incomplete table
+
+    # 3. repair of the cache, and the result files written anew from it; nothing is submitted
+    assert len(redownload_incomplete(cache, qnx=fake, log=lambda *a: None)) == 1
+    capsys.readouterr()
+    runner.main(args + ["--cached-only", "--rewrite"])
+    text = capsys.readouterr().out
+    assert "emulator2_iid-seed900.npz changed (QFedAvg/acc_device)" in text and "1 of the 1 files of the runs changed" in text
+    again = {k: v for k, v in np.load(run_file).items()}
+    assert set(again) == set(first) and all(np.array_equal(again[k], first[k], equal_nan=first[k].dtype.kind == "f") for k in first)
+    summary = json.load(open(os.path.join(out, "summary.json")))
+    assert summary["seconds"] == 123.0 and summary["usage"]["cost_charged_hqc"] == 45.6      # kept from the run on the device
+    assert summary["runs"][0]["final"]["QFedAvg"]["accuracy_device"] == pytest.approx(float(first["QFedAvg/acc_device"].mean()))
+    assert [(r["shots_before"], r["shots_after"]) for r in summary["results_downloaded_again"]] == [(12, 100)]
+    assert open(os.path.join(out, "provenance.json")).read() == record                       # the record of the run is kept
+    rewrite = json.load(open(os.path.join(out, "provenance-rewrite.json")))
+    assert any("written anew from the cache" in note for note in rewrite["notes"])
+    assert len(fake.started) == n_jobs
+
+    # 4. a replay now reproduces the stored result files
+    runner.main(args + ["--cached-only"])
+    assert "2 of 2 stored result files are reproduced" in capsys.readouterr().out
+    assert len(fake.started) == n_jobs

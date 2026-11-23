@@ -24,6 +24,12 @@ three times, end the run with the exit status 76, and ``scripts/emulator_campaig
 start it again.  Output in ``results/<name>/``: one ``.npz`` per
 run, ``summary.json``, the job log and the shot tables (``cache/``), and the run record
 ``provenance.json`` (which program, when, on which device; shown when the script ends).
+
+With ``--cached-only`` the script never submits a job.  It replays the campaign from the cache and compares
+the outcome with the stored result files.  With ``--cached-only --rewrite`` it writes the result files anew
+instead (used after a result of the cache was replaced, see ``scripts/nexus_redownload.py``): the duration
+and the charged cost of the stored summary are kept, the record ``provenance.json`` of the run on the device
+is kept, and the record of the rewriting run is ``provenance-rewrite.json``.
 """
 from __future__ import annotations
 
@@ -58,6 +64,19 @@ def eval_indices(y: np.ndarray, n_classes: int, per_class: int, block: int = 0) 
     return np.sort(np.concatenate(out))
 
 
+def changed_arrays(path: str, arrays: dict) -> list:
+    """Names of the arrays that differ from the stored file ``path`` (all names if the file does not exist)."""
+    if not os.path.exists(path):
+        return sorted(arrays)
+    stored = np.load(path)
+    out = sorted(set(stored.files) ^ set(arrays))
+    for key, val in arrays.items():
+        val = np.asarray(val)
+        if key in stored.files and not np.array_equal(stored[key], val, equal_nan=val.dtype.kind == "f"):
+            out.append(key)
+    return sorted(out)
+
+
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scenarios", nargs="+", default=None, choices=sorted(S.SCENARIOS),
@@ -88,7 +107,13 @@ def main(argv=None) -> None:
                     help="seconds without an answer to a request after which the process ends with status 75, so that "
                          "scripts/emulator_campaign.sh starts it again (0: never)")
     ap.add_argument("--cached-only", action="store_true", help="never submit a job; fail if a result is not in the cache")
+    ap.add_argument("--rewrite", action="store_true",
+                    help="with --cached-only: write the result files anew from the cache instead of comparing them "
+                         "with the stored files")
     a = ap.parse_args(argv)
+    if a.rewrite and not a.cached_only:
+        ap.error("--rewrite requires --cached-only")
+    compare = a.cached_only and not a.rewrite          # a replay that compares with the stored result files
 
     name = a.name or ("emulator-" + (a.device if a.backend == "nexus" else a.backend))
     out_dir = os.path.join(ROOT, "results", name)
@@ -160,8 +185,12 @@ def main(argv=None) -> None:
                                           for s in a.scenarios})
 
     with provenance.record_run("federated training of several runs in lockstep", entry="scripts/run_emulator.py",
-                               executor=executor, backend=backend, parameters=parameters, save_to=out_dir,
-                               replay=a.cached_only) as rec:
+                               executor=executor, backend=backend, parameters=parameters,
+                               save_to=os.path.join(out_dir, "provenance-rewrite.json") if a.rewrite else out_dir,
+                               replay=compare) as rec:
+        if a.rewrite:
+            rec.notes.append("the result files were written anew from the cache; nothing was submitted, and the record "
+                             "of the run on the device is provenance.json")
         shared = SharedExecutor(executor, parties=len(setups), separate=a.separate_runs)
         results, errors = [None] * len(setups), [None] * len(setups)
         t0 = time.time()
@@ -224,7 +253,7 @@ def main(argv=None) -> None:
             executor.run(reqs)
 
         # -- output (a replay from the cache compares with the stored files instead of overwriting them)
-        outcomes = []
+        outcomes, changes = [], []
         summary = dict(name=name, backend=a.backend, device=a.device if a.backend == "nexus" else a.backend,
                        tail=tail, methods=a.methods, runs=[], seconds=time.time() - t0)
         for i, s in enumerate(setups):
@@ -246,7 +275,9 @@ def main(argv=None) -> None:
                                        accuracy_noiseless=float(np.mean(h["acc_exact"][-tail:])),
                                        loss_noiseless=float(np.mean(h["loss_exact"][-tail:])))
             path = os.path.join(out_dir, f"{s['scenario']}-seed{s['seed']}.npz")
-            outcomes.append(provenance.write_arrays(path, flat, replay=a.cached_only))
+            if a.rewrite:
+                changes.append((os.path.basename(path), changed_arrays(path, flat)))
+            outcomes.append(provenance.write_arrays(path, flat, replay=compare))
             rec.outputs.append(path)
             row["scenario_definition"] = asdict(s["sc"])
             row["run"] = asdict(s["cfg"])
@@ -258,10 +289,30 @@ def main(argv=None) -> None:
                                 n_programs=getattr(executor, "n_programs", None),
                                 cost_formula_hqc=getattr(executor, "cost_estimate", None),
                                 cost_charged_hqc=getattr(executor, "cost_charged", None))
+        if a.backend == "nexus":
+            from qfedqgt.nexus import redownloaded
+
+            again = [dict(job=r.get("name"), shots_before=r.get("shots_before"), shots_after=r.get("shots_after"),
+                          time=r.get("time")) for r in redownloaded(os.path.join(out_dir, "cache"))]
+            if again:           # results of the cache that were first stored with too few shots (scripts/nexus_redownload.py)
+                summary["results_downloaded_again"] = again
         path = os.path.join(out_dir, "summary.json")
-        outcomes.append(provenance.write_json(path, summary, replay=a.cached_only, ignore=("seconds", "cost_charged_hqc")))
+        if a.rewrite and os.path.exists(path):
+            # the duration and the charged cost describe the run on the device and do not follow from the cache
+            with open(path) as f:
+                stored_summary = json.load(f)
+            summary["seconds"] = stored_summary.get("seconds", summary["seconds"])
+            summary["usage"]["cost_charged_hqc"] = stored_summary.get("usage", {}).get("cost_charged_hqc")
+        outcomes.append(provenance.write_json(path, summary, replay=compare, ignore=("seconds", "cost_charged_hqc")))
         rec.outputs.append(path)
-        if a.cached_only:
+        if a.rewrite:
+            for name_, keys in changes:
+                if keys:
+                    print(f"written anew from the cache: {name_} changed ({', '.join(keys)})", flush=True)
+            n_changed = sum(1 for _, keys in changes if keys)
+            print(f"written anew from the cache: {len(outcomes)} result files, {n_changed} of the {len(changes)} "
+                  "files of the runs changed", flush=True)
+        elif a.cached_only:
             n_same = sum(1 for o in outcomes if o == "reproduced")
             print(f"replay from the cache: {n_same} of {len(outcomes)} stored result files are reproduced"
                   + ("" if n_same == len(outcomes) else f" ({len(outcomes) - n_same} written or different)"), flush=True)
