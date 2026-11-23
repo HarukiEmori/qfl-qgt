@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Results of the cache that hold fewer shots than their jobs were submitted with.
 
-A result that is read right after its job is reported as completed can hold only the first shots,
-because the service is still assembling it.  The executor now checks the number of shots of every
-result and repeats the download; this script finds and repairs tables that were stored before that
-check existed.
+A result that is read at the moment its job is reported as completed can hold only the first shots
+(this happened once, with 12 of 100 shots; see the README).  The executor now checks the number of
+shots of every result and repeats the download; this script finds and repairs tables that were stored
+before that check existed.
 
     python scripts/nexus_redownload.py --name emulator2-reimei-E            # list the incomplete tables (no connection)
     python scripts/nexus_redownload.py --name emulator2-reimei-E --repair   # download their results again from Nexus
@@ -13,8 +13,8 @@ check existed.
 ``--repair`` reads the results of the recorded jobs from Nexus (requires ``qnx login``).  It submits
 nothing.  An incomplete table is kept in ``<cache>/incomplete/``, and the replacement is recorded in
 ``jobs.jsonl`` (event ``redownloaded``).  After a repair, run the script that produced the results
-again (for a campaign: ``scripts/run_emulator.py --backend nexus --name <name>``); it reads everything
-from the cache and writes the result files anew.
+again (for a campaign: ``scripts/run_emulator.py --backend nexus --name <name> --cached-only --rewrite``);
+it reads everything from the cache, submits nothing, and writes the result files anew.
 """
 from __future__ import annotations
 

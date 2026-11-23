@@ -77,7 +77,7 @@ class FakeQnx(types.ModuleType):
                         table = np.zeros((_shots, len(cbits)), dtype=int)
                         if fake.pattern:
                             table = np.random.default_rng(_ref.id.int % 2**32).integers(0, 2, size=table.shape)
-                        if fake.partial > 0:               # the service is still assembling the result
+                        if fake.partial > 0:               # the result holds only its first shots
                             fake.partial -= 1
                             table = table[:fake.partial_rows]
                         return table

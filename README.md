@@ -21,7 +21,7 @@ figures and tables.
 | `qfedqgt/geometry.py` | Mixed-state quantum geometric tensor: Bures metric, mean Uhlmann curvature, incompatibility ratio, closed forms for global depolarizing noise |
 | `qfedqgt/model.py` | Variational classifier with Pauli-Z readout and its estimators from measurement counts (gradient, purity) |
 | `qfedqgt/federated.py` | Client update, aggregation rules (QFedAvg, QFedFisher, QFedQGT, ablations), federated loop, lockstep execution of several runs |
-| `qfedqgt/nexus.py` | Native-gate programs (`PhasedX`, `Rz`, `ZZPhase`), packing of circuits by qubit reuse, execution through Quantinuum Nexus or a local Aer simulator, cache and re-attachment of jobs |
+| `qfedqgt/nexus.py` | Native-gate programs (`PhasedX`, `Rz`, `ZZPhase`), packing of circuits by qubit reuse, execution through Quantinuum Nexus or a local Aer simulator, cache and re-attachment of jobs, check of the number of shots of every downloaded result |
 | `qfedqgt/metric.py` | Two-copy measurement of the Bures metric (destructive SWAP test, parameter-shift overlaps) |
 | `qfedqgt/provenance.py` | Run records: which program, when, and on which device (shown automatically and saved next to the results) |
 | `qfedqgt/scenarios.py` | Scenarios, run configuration, and learning rates of the paper (simulations and emulator experiment) |
@@ -36,6 +36,8 @@ figures and tables.
 | `scripts/emulator_design.py` | Candidate designs of the two-class emulator experiment, compared in the local model before the runs |
 | `scripts/emulator_multiplier_check.py` | Echo frequency of the noisy clients in the pre-check run, the matched multiplier of the local model, and the step sizes and prediction of the two-class experiment at several multipliers |
 | `scripts/emulator_summary.py` | Final accuracies and paired differences of the emulator experiments |
+| `scripts/emulator_model_comparison.py` | Two-class experiment on the emulator against the local model: accuracies, paired differences, and a check of every measured evaluation against its expectation |
+| `scripts/nexus_redownload.py` | Finds stored results with fewer shots than their jobs requested and downloads them again (submits nothing) |
 | `scripts/nexus_geometry.py` | Noise strength from echo circuits on the emulator, compared with the local noise model |
 | `scripts/nexus_metric.py` | Two-copy measurement of a block of the Bures metric on the emulator |
 | `scripts/nexus_position.py` | Survival of an echo circuit against its position in a packed program |
@@ -84,7 +86,7 @@ python scripts/run_campaign.py tune          # step-size grid on the tuning seed
 python scripts/run_campaign.py select        # writes results/tuning/learning_rates.json
 python scripts/run_campaign.py main          # reported runs (16 seeds per scenario and method)
 python scripts/run_campaign.py sens --scenarios shots_and_noise noise_only_x500   # every step size on the reported seeds
-python scripts/make_figures.py all           # figures/geometry.pdf, training.pdf, sweep.pdf, emulator.pdf
+python scripts/make_figures.py all           # figures/geometry.pdf, training.pdf, sweep.pdf, emulator.pdf, emulator2.pdf
 ```
 
 The scenarios are defined in `qfedqgt/scenarios.py`.
@@ -110,7 +112,7 @@ python scripts/run_federated.py --scenario shots_and_noise --backend nexus --dev
 
 ## Experiments on the emulator `reimei-E`
 
-The emulator experiments of the paper were run from 2026-11-19 on through Quantinuum Nexus.  Their shot tables,
+The emulator experiments of the paper were run from 2026-11-19 to 2026-11-21 (UTC) through Quantinuum Nexus.  Their shot tables,
 job logs and run records are in `results/`, so that every command below reproduces its result from the cache
 without a login.  With `--cached-only` a script never submits a job and stops if a result is missing.  Such a
 replay recomputes the results from the stored shot tables, compares them with the stored result files, and
@@ -124,8 +126,12 @@ python scripts/nexus_geometry.py --device reimei-E --scenario emulator_iid --sca
 python scripts/nexus_metric.py --backend nexus --device reimei-E --scales 1 50 --shots 200 --layer 1 --cached-only
 python scripts/nexus_position.py --device reimei-E --scales 1 300 --shots 60 20 --circuits 600 --cached-only  # position in a program
 python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator-reimei-E --cached-only
+python scripts/run_emulator.py --backend nexus --device reimei-E --name emulator2-reimei-E --cached-only   # two-class experiment
 python scripts/emulator_summary.py                                                      # accuracies and paired differences
+python scripts/emulator_model_comparison.py                                             # two-class experiment against the local model
+python scripts/nexus_redownload.py --all                                                # shots of every stored result against its job
 python scripts/make_figures.py emulator
+python scripts/make_figures.py emulator2
 ```
 
 The federated training is organized in campaigns (`EMULATOR_CAMPAIGNS` in `qfedqgt/scenarios.py`).  The runs of
@@ -186,6 +192,9 @@ later.
 | `results/emulator-reimei-E/`, `results/emulator-reimei-E-2/` | Federated training on the emulator: four clients (two reference clients with 30 shots per circuit, two clients with 300-fold error rates and one shot), digits 0 to 3, one layer, 15 rounds, IID data and a Dirichlet label partition, 16 seeds each in two campaigns (seeds 0 to 5 and 6 to 15) |
 | `results/emulator2-smoke/` | Pre-check of the two-class experiment: one round of two runs with the seeds 900 and 901 (5 jobs, among them a program with 2448 two-qubit circuits), and the tests of `scripts/emulator_precheck.py` (`precheck.json`, `precheck.log`) |
 | `results/emulator-local*/`, `results/sim-emulator_*`, `results/sens-emulator_*` | The same experiment in the local gate-level model: the same seeds with the same grouping into campaigns, 16 reported seeds, and every step size of the grids |
+| `results/emulator2-reimei-E/` | Two-class experiment on the emulator: eight clients (two reference clients with 16 shots per circuit, six clients with 400-fold error rates and one shot), digits 0 and 1, one layer on two qubits, 25 rounds, IID data, seeds 0 to 15 in one campaign of 352 jobs.  `redownload.log` and `provenance-rewrite.json` record the result that was downloaded again (see below) |
+| `results/emulator2-local/`, `results/sim-emulator2_iid/`, `results/sens-emulator2_iid/` | The two-class experiment in the local gate-level model: the same runs with the evaluation procedure of the emulator, the prediction of `plans/emulator2.md`, and every step size of the grids |
+| `results/emulator2-summary.json`, `results/emulator2-comparison.json` | Accuracies and paired differences of the two-class experiment, and its comparison with the local model (`scripts/emulator_summary.py`, `scripts/emulator_model_comparison.py`) |
 
 **Run records.**  Every script that executes circuits ends by showing a run record and saves it next to its
 results (`provenance.json`): which program produced the result (repository, commit, state of the working tree,
@@ -199,6 +208,20 @@ from qfedqgt.provenance import record_run
 with record_run("my experiment", executor=executor, save_to="results/my-experiment"):
     executor.run(requests)
 ```
+
+**Completeness of downloaded results.**  The executor compares the number of shots of every downloaded result with
+the request.  It repeats the download of a result with too few shots and never stores such a result; if the result
+stays incomplete, the run stops and the job remains re-attachable.  A stored table with a wrong number of shots is
+refused when it is read.  This check was added after the two-class campaign.  The result of the first of its two
+evaluation jobs, read at the moment the job was reported as completed, held the first 12 of its 100 shots.
+`scripts/nexus_redownload.py` found the table, downloaded the complete result of the same job again, and kept the
+incomplete table in `results/emulator2-reimei-E/cache/incomplete/`; nothing was submitted.  The result files were then
+written anew from the cache (`scripts/run_emulator.py --cached-only --rewrite`; see `redownload.log` and
+`provenance-rewrite.json` in the results folder), and only the accuracies measured on the emulator for the seeds 0 to 8
+changed.  The incomplete result was noticed because the accuracies measured on the emulator deviated from their
+expectations under the model of the reference device by much more than their statistical spread
+(`scripts/emulator_model_comparison.py`; the numbers are in the Results section).  No other stored table of the
+repository has fewer shots than its job requested (`python scripts/nexus_redownload.py --all`).
 
 **What limits an experiment on the emulator.**  Measured on 2026-11-19:
 
@@ -220,6 +243,11 @@ with record_run("my experiment", executor=executor, save_to="results/my-experime
   local model has no matching multiplier; the experiments use multipliers below this range (300 and 400).
 - The default waiting of the client (`qnx.jobs.wait_for`) polls with intervals of up to 20 minutes; the
   executor asks for the job status every 20 s instead.
+
+- In the two-class campaign of 2026-11-20 (352 jobs with one program each, 14 jobs per round) a job waited between
+  0.3 and 8.3 minutes (median 5.4), and a round took between 18 and 39 minutes.
+- A result that is read at the moment its job is reported as completed can hold only the first shots (once among
+  the results of the 722 jobs stored in this repository, see above).  The executor checks the number of shots of every result.
 
 One round of the four-class experiment (12 runs, 4992 circuits) therefore took about 20 to 30 minutes, and the
 experiment is much smaller than the simulations.  The cost formula gives 0.279 HQC per image and shot for the
@@ -249,6 +277,36 @@ Averaged over the two partitions, with one value per seed, the differences are +
 The same experiment in the local gate-level model with 16 seeds (`results/sim-emulator_*`) gives differences of
 +12.4 ± 2.4 and +13.7 ± 2.0 points (IID) and +9.8 ± 1.8 and +10.2 ± 2.3 points (Dirichlet partition).
 The 32 runs comprised 228,480 circuits and 3,630,720 shots in 337 jobs.  `python scripts/emulator_summary.py` prints these numbers.
+
+### Emulator `reimei-E`: two-class experiment
+
+Final test accuracy of the models trained on the emulator, as the mean over 16 seeds of the average over the last
+5 rounds (`results/emulator2-reimei-E/`).  The design, the step sizes, the seeds and the analysis were fixed before
+the runs (`plans/emulator2.md`).  `Device` is measured on the emulator (100 test images, 100 shots each), and
+`Noiseless` is the accuracy of the noiseless circuit with the same parameters on all 200 test images.
+
+| Accuracy | QFedAvg | QFedFisher | QFedQGT | Difference | Seeds |
+| :-- | :-: | :-: | :-: | :-: | :-: |
+| Device | 0.872 | 0.812 | 0.918 | +4.6 ± 2.2, +10.6 ± 2.6 | 11/16, 13/16 |
+| Noiseless | 0.868 | 0.796 | 0.926 | +5.8 ± 2.8, +13.0 ± 2.7 | 10/16, 14/16 |
+
+The differences measured on the device are 2.1 and 4.0 times their standard errors.  QFedQGT and QFedAvg have the same accuracy in one seed on the device.
+The prediction of the local gate-level model, made before the runs, was 0.796, 0.779 and 0.925 with
+differences of +12.9 ± 2.3 and +14.6 ± 2.4 points.  The differences on the emulator are smaller than this
+prediction by 8.3 ± 3.5 and 4.0 ± 3.7 points (paired over the seeds).  Against the model with the evaluation
+procedure of the emulator (`results/emulator2-local/`), the accuracy on the emulator minus that of the model is
+-0.6 ± 1.6 points for QFedQGT, +7.0 ± 3.1 points for QFedAvg and +1.8 ± 3.1 points for QFedFisher: QFedQGT agrees
+with the model, and the baselines reach higher accuracies on the emulator than in the model.
+`python scripts/emulator_model_comparison.py` prints this comparison (`results/emulator2-comparison.json`).
+
+Check of the evaluation: every accuracy measured on the emulator (one per seed, method and evaluated round, 240 in all)
+is compared with its expectation for the same parameters and images under the model of the reference device.  The
+root mean square of the deviation in units of its standard deviation is 1.06.
+With the result that was first downloaded with 12 of its 100 shots (see above) it was 2.73, and the accuracies
+were 0.834, 0.803 and 0.891 with differences of +5.7 ± 2.0 and +8.8 ± 2.9 points.  These values are superseded by
+the table above, which uses the complete result.
+The 16 runs comprised 721,600 circuits and 3,891,200 shots in 352 jobs within 11.6 hours
+(28,579 HQC charged; the cost formula gives 30,186 HQC).
 
 ### Simulations with the gate-level noise model
 

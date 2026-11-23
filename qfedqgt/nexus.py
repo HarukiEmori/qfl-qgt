@@ -46,8 +46,8 @@ class NexusUnreachable(RuntimeError):
 class NexusIncompleteResult(RuntimeError):
     """The result of a program holds fewer shots than were requested.
 
-    A result that is read right after its job is reported as completed can hold only the first shots,
-    because the service is still assembling it.  Such a result is never stored: the download is repeated,
+    A result that is read at the moment its job is reported as completed can hold only the first shots
+    (this happened once, with 12 of 100 shots; see the README).  Such a result is never stored: the download is repeated,
     and if the result stays incomplete the run stops while the job remains re-attachable, so that a later
     start downloads the result of the same job again.  A stored table with a wrong number of shots is
     reported in the same way (``scripts/nexus_redownload.py`` repairs it from the job on the service).
@@ -757,8 +757,8 @@ class NexusExecutor(_ProgramExecutor):
     def _download(self, job, name: str, ref_id: str, spec, key: str) -> np.ndarray:
         """Shot table of one program of a completed job, with the requested number of shots.
 
-        The result is downloaded again while it holds fewer shots than requested (the service may still be
-        assembling it).  If it stays incomplete, :class:`NexusIncompleteResult` is raised and nothing is stored.
+        The result is downloaded again while it holds fewer shots than requested.  If it stays incomplete,
+        :class:`NexusIncompleteResult` is raised and nothing is stored.
         """
         template, rows, shots = spec
         bits = program_bits(template.n, len(rows))
