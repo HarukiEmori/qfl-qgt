@@ -1,0 +1,110 @@
+[campaign emulator2-reimei-E] 2026-11-20 05:42:56 started (device reimei-E, options: )
+round   1  noiseless accuracy, mean over the runs: QFedAvg=0.589  QFedFisher=0.578  QFedQGT=0.569  (1193 s)
+round   2  noiseless accuracy, mean over the runs: QFedAvg=0.573  QFedFisher=0.605  QFedQGT=0.649  (3529 s)
+round   3  noiseless accuracy, mean over the runs: QFedAvg=0.598  QFedFisher=0.601  QFedQGT=0.677  (4829 s)
+round   4  noiseless accuracy, mean over the runs: QFedAvg=0.600  QFedFisher=0.610  QFedQGT=0.724  (6617 s)
+round   5  noiseless accuracy, mean over the runs: QFedAvg=0.605  QFedFisher=0.627  QFedQGT=0.738  (7859 s)
+round   6  noiseless accuracy, mean over the runs: QFedAvg=0.656  QFedFisher=0.624  QFedQGT=0.757  (9707 s)
+round   7  noiseless accuracy, mean over the runs: QFedAvg=0.673  QFedFisher=0.649  QFedQGT=0.795  (10928 s)
+round   8  noiseless accuracy, mean over the runs: QFedAvg=0.757  QFedFisher=0.670  QFedQGT=0.806  (13163 s)
+round   9  noiseless accuracy, mean over the runs: QFedAvg=0.719  QFedFisher=0.688  QFedQGT=0.820  (14366 s)
+round  10  noiseless accuracy, mean over the runs: QFedAvg=0.766  QFedFisher=0.682  QFedQGT=0.840  (16295 s)
+round  11  noiseless accuracy, mean over the runs: QFedAvg=0.763  QFedFisher=0.714  QFedQGT=0.849  (18670 s)
+round  12  noiseless accuracy, mean over the runs: QFedAvg=0.713  QFedFisher=0.722  QFedQGT=0.871  (20764 s)
+round  13  noiseless accuracy, mean over the runs: QFedAvg=0.738  QFedFisher=0.711  QFedQGT=0.857  (22214 s)
+round  14  noiseless accuracy, mean over the runs: QFedAvg=0.752  QFedFisher=0.747  QFedQGT=0.874  (23808 s)
+round  15  noiseless accuracy, mean over the runs: QFedAvg=0.749  QFedFisher=0.752  QFedQGT=0.886  (25513 s)
+round  16  noiseless accuracy, mean over the runs: QFedAvg=0.772  QFedFisher=0.743  QFedQGT=0.890  (26756 s)
+round  17  noiseless accuracy, mean over the runs: QFedAvg=0.816  QFedFisher=0.731  QFedQGT=0.905  (28219 s)
+round  18  noiseless accuracy, mean over the runs: QFedAvg=0.788  QFedFisher=0.768  QFedQGT=0.912  (30148 s)
+round  19  noiseless accuracy, mean over the runs: QFedAvg=0.832  QFedFisher=0.777  QFedQGT=0.891  (31369 s)
+round  20  noiseless accuracy, mean over the runs: QFedAvg=0.846  QFedFisher=0.785  QFedQGT=0.908  (32508 s)
+round  21  noiseless accuracy, mean over the runs: QFedAvg=0.840  QFedFisher=0.811  QFedQGT=0.913  (34411 s)
+round  22  noiseless accuracy, mean over the runs: QFedAvg=0.864  QFedFisher=0.806  QFedQGT=0.925  (35555 s)
+round  23  noiseless accuracy, mean over the runs: QFedAvg=0.886  QFedFisher=0.794  QFedQGT=0.932  (36821 s)
+round  24  noiseless accuracy, mean over the runs: QFedAvg=0.867  QFedFisher=0.786  QFedQGT=0.923  (37969 s)
+round  25  noiseless accuracy, mean over the runs: QFedAvg=0.882  QFedFisher=0.783  QFedQGT=0.938  (39871 s)
+emulator2_iid          seed 0  QFedAvg: device 0.870 noiseless 0.948  QFedFisher: device 0.860 noiseless 0.800  QFedQGT: device 0.930 noiseless 0.959
+emulator2_iid          seed 1  QFedAvg: device 0.740 noiseless 0.972  QFedFisher: device 0.870 noiseless 0.879  QFedQGT: device 0.840 noiseless 0.964
+emulator2_iid          seed 2  QFedAvg: device 0.860 noiseless 0.919  QFedFisher: device 0.790 noiseless 0.634  QFedQGT: device 0.930 noiseless 0.854
+emulator2_iid          seed 3  QFedAvg: device 0.770 noiseless 0.837  QFedFisher: device 0.830 noiseless 0.821  QFedQGT: device 0.810 noiseless 0.963
+emulator2_iid          seed 4  QFedAvg: device 0.920 noiseless 0.956  QFedFisher: device 0.770 noiseless 0.824  QFedQGT: device 0.910 noiseless 0.998
+emulator2_iid          seed 5  QFedAvg: device 0.760 noiseless 0.868  QFedFisher: device 0.810 noiseless 0.784  QFedQGT: device 0.840 noiseless 0.973
+emulator2_iid          seed 6  QFedAvg: device 0.850 noiseless 0.983  QFedFisher: device 0.760 noiseless 0.946  QFedQGT: device 0.810 noiseless 0.937
+emulator2_iid          seed 7  QFedAvg: device 0.860 noiseless 0.749  QFedFisher: device 0.640 noiseless 0.738  QFedQGT: device 0.950 noiseless 0.878
+emulator2_iid          seed 8  QFedAvg: device 0.790 noiseless 0.846  QFedFisher: device 0.890 noiseless 0.893  QFedQGT: device 0.760 noiseless 0.775
+emulator2_iid          seed 9  QFedAvg: device 0.870 noiseless 0.843  QFedFisher: device 0.880 noiseless 0.867  QFedQGT: device 0.930 noiseless 0.945
+emulator2_iid          seed 10  QFedAvg: device 0.850 noiseless 0.852  QFedFisher: device 0.790 noiseless 0.797  QFedQGT: device 0.770 noiseless 0.802
+emulator2_iid          seed 11  QFedAvg: device 0.880 noiseless 0.852  QFedFisher: device 0.760 noiseless 0.700  QFedQGT: device 0.950 noiseless 0.949
+emulator2_iid          seed 12  QFedAvg: device 0.800 noiseless 0.700  QFedFisher: device 0.920 noiseless 0.931  QFedQGT: device 0.980 noiseless 0.988
+emulator2_iid          seed 13  QFedAvg: device 0.870 noiseless 0.927  QFedFisher: device 0.640 noiseless 0.626  QFedQGT: device 0.890 noiseless 0.897
+emulator2_iid          seed 14  QFedAvg: device 0.940 noiseless 0.950  QFedFisher: device 0.790 noiseless 0.721  QFedQGT: device 0.990 noiseless 0.976
+emulator2_iid          seed 15  QFedAvg: device 0.720 noiseless 0.684  QFedFisher: device 0.850 noiseless 0.774  QFedQGT: device 0.970 noiseless 0.962
+==============================================================================
+RUN RECORD
+-- Program
+   task                              federated training of several runs in lockstep
+   entry point                       scripts/run_emulator.py
+   repository                        https://github.com/HarukiEmori/qfl-qgt
+   commit                            c927dd878e6c3f65ad29c84af960680836b3f3a2
+   working tree                      clean
+-- When
+   started                           2026-11-20T05:42:57-0800
+   finished                          2026-11-20T17:20:57-0800
+   duration                          41880 s
+   jobs submitted from               2026-11-20T05:43:21-0800
+   last job completed                2026-11-20T17:20:57-0800
+-- Device
+   kind                              Quantinuum Nexus
+   project                           QFedQGT
+   device profiles                   reimei-E-x1, reimei-E-x400
+   cache                             results/emulator2-reimei-E/cache
+   jobs                              352 (0 read from the cache), 352 programs
+   devices of the jobs               reimei-E x1, reimei-E x400
+   commits that submitted the jobs   c927dd878e
+   cost charged (HQC)                28578.6
+   job identifiers                   d4e91957-a470-4e7d-b2d2-a63697397188, faf777c0-5fcb-47be-8795-9c58cc5a8a2d, dc88d629-2b24-47be-b0fb-6cff20c5ef97, b646fc2e-ad2d-4661-a89f-61d51a8d67f4, ... (352 in total, all in the saved record)
+-- Usage
+   n circuits                        721600
+   n shots                           3891200
+   n programs                        352
+   cost formula hqc                  30186.2
+-- Parameters
+   scenarios                         emulator2_iid
+   seeds                             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+   methods                           QFedAvg, QFedFisher, QFedQGT
+   rounds                            25
+   batch                             8
+   echo shots                        5
+   eval shots                        100
+   eval inputs                       20
+   shots per circuit                 emulator2_iid: 1, 16
+   error rate multipliers            emulator2_iid: 1, 400
+   learning rates                    emulator2_iid: QFedAvg: 0.6, QFedFisher: 0.3, QFedQGT: 0.1
+   segments                          2448
+   programs per job                  1
+   segments schedule                 
+-- Environment
+   python                            3.13.16 on Darwin arm64
+   packages                          numpy 2.5.4, scipy 1.18.1, pytket 2.18.5, qnexus 0.51.1, quantinuum-schemas 7.8.2, pytket-qiskit 0.79.0, matplotlib 3.11.2
+-- Outputs
+   file                              results/emulator2-reimei-E/emulator2_iid-seed0.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed1.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed2.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed3.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed4.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed5.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed6.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed7.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed8.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed9.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed10.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed11.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed12.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed13.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed14.npz
+   file                              results/emulator2-reimei-E/emulator2_iid-seed15.npz
+   file                              results/emulator2-reimei-E/summary.json
+   file                              results/emulator2-reimei-E/provenance.json
+==============================================================================
+[campaign emulator2-reimei-E] 2026-11-20 17:20:57 finished after 0 restarts
