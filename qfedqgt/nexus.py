@@ -32,7 +32,8 @@ import numpy as np
 from . import provenance, sim
 
 __all__ = ["DeviceProfile", "build_program", "program_cost", "AerExecutor", "NexusExecutor", "NexusUnreachable",
-           "NexusJobFatal", "FATAL_EXIT_STATUS",
+           "incomplete_tables", "redownload_incomplete", "redownloaded",
+           "NexusJobFatal", "FATAL_EXIT_STATUS", "NexusIncompleteResult",
            "STALL_EXIT_STATUS", "login_status"]
 
 STALL_EXIT_STATUS = 75     # exit status of a process that the stall guard of NexusExecutor ended
@@ -40,6 +41,17 @@ STALL_EXIT_STATUS = 75     # exit status of a process that the stall guard of Ne
 
 class NexusUnreachable(RuntimeError):
     """Nexus did not answer.  The submitted jobs are not affected, and a later run re-attaches to them."""
+
+
+class NexusIncompleteResult(RuntimeError):
+    """The result of a program holds fewer shots than were requested.
+
+    A result that is read right after its job is reported as completed can hold only the first shots,
+    because the service is still assembling it.  Such a result is never stored: the download is repeated,
+    and if the result stays incomplete the run stops while the job remains re-attachable, so that a later
+    start downloads the result of the same job again.  A stored table with a wrong number of shots is
+    reported in the same way (``scripts/nexus_redownload.py`` repairs it from the job on the service).
+    """
 
 
 FATAL_EXIT_STATUS = 76      # exit status of a run that must not be started again automatically
@@ -155,6 +167,122 @@ def _shots_to_counts(shot_table: np.ndarray, n: int, segments: int, split: int) 
         for s in range(segments):
             out[h, s] = np.bincount(block[:, s], minlength=2 ** n)
     return out
+
+
+def _store_table(path: str, table: np.ndarray) -> None:
+    """Write a shot table to ``path`` (``.npz``) so that a reader never sees a partly written file."""
+    partial = path[:-len(".npz")] + ".partial.npz"
+    np.savez_compressed(partial, shots=table)
+    os.replace(partial, path)
+
+
+def job_log(cache_dir: str) -> list:
+    """Records of ``jobs.jsonl`` of a cache directory."""
+    path = os.path.join(cache_dir, "jobs.jsonl")
+    out = []
+    if os.path.exists(path):
+        with open(path) as f:
+            for line in f:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return out
+
+
+def redownloaded(cache_dir: str) -> list:
+    """Records of the results that were downloaded again after an incomplete first download."""
+    return [r for r in job_log(cache_dir) if r.get("event") == "redownloaded"]
+
+
+def incomplete_tables(cache_dir: str) -> list:
+    """Stored shot tables whose number of shots does not fit the job that produced them.
+
+    Returns ``[dict(job_id, name, key, ref_id, shots_stored, shots_requested), ...]``.  The requested number of
+    shots of a program is ``program_shots`` of its job record; older records list only the distinct shot counts
+    of the job (``shots``), which is enough when all programs of the job have the same count.  For other old
+    records every table must have one of these counts, and the job is checked as a whole: the stored shots
+    times circuits must add up to ``circuit_shots`` (``shots_requested`` is then ``None``).
+    """
+    out = []
+    for rec in job_log(cache_dir):
+        if rec.get("event") != "submitted" or "keys" not in rec:
+            continue
+        keys, refs = rec["keys"], rec.get("ref_ids", [None] * len(rec["keys"]))
+        tables = {}
+        for key in keys:
+            path = os.path.join(cache_dir, key + ".npz")
+            if os.path.exists(path):
+                tables[key] = np.load(path)["shots"].shape
+        shots = rec.get("shots")
+        if "program_shots" in rec:
+            want = dict(zip(keys, rec["program_shots"]))
+        elif isinstance(shots, (int, float)):
+            want = {key: int(shots) for key in keys}
+        elif isinstance(shots, (list, tuple)) and len(shots) == 1:
+            want = {key: int(shots[0]) for key in keys}
+        else:
+            want = None
+        if want is not None:
+            for key, ref in zip(keys, refs):
+                if key in tables and tables[key][0] != want[key]:
+                    out.append(dict(job_id=rec["job_id"], name=rec.get("name"), key=key, ref_id=ref,
+                                    shots_stored=int(tables[key][0]), shots_requested=int(want[key])))
+        else:
+            # every table must have one of the shot counts of the job ...
+            allowed = {int(x) for x in shots} if isinstance(shots, (list, tuple)) else set()
+            bad = {key for key in keys if key in tables and allowed and tables[key][0] not in allowed}
+            # ... and the stored shots times bits (bits = qubits * circuits) must be the number of qubits times circuit_shots
+            if not bad and len(tables) == len(keys) and rec.get("circuit_shots"):
+                total = sum(rows * bits for rows, bits in tables.values())
+                if total % rec["circuit_shots"] or total // rec["circuit_shots"] not in range(1, 65):
+                    bad = set(tables)
+            for key, ref in zip(keys, refs):
+                if key in bad:
+                    out.append(dict(job_id=rec["job_id"], name=rec.get("name"), key=key, ref_id=ref,
+                                    shots_stored=int(tables[key][0]), shots_requested=None))
+    return out
+
+
+def redownload_incomplete(cache_dir: str, qnx=None, log=print) -> list:
+    """Download again the results whose stored tables hold too few shots; no job is submitted.
+
+    For every table of :func:`incomplete_tables` the result of its job is read from the service.  A result
+    with more shots replaces the stored table, the incomplete table is kept in ``<cache>/incomplete/``, and a
+    record ``redownloaded`` is appended to ``jobs.jsonl``.  Returns these records.
+    """
+    todo = incomplete_tables(cache_dir)
+    if not todo:
+        return []
+    if qnx is None:
+        import qnexus as qnx
+    program = provenance.program_info()
+    done = []
+    for item in todo:
+        path = os.path.join(cache_dir, item["key"] + ".npz")
+        stored = np.load(path)["shots"]
+        job = qnx.jobs.get(id=item["job_id"])
+        by_input = {str(r.get_input().id): r for r in qnx.jobs.results(job)}
+        res = by_input[item["ref_id"]].download_result()
+        table = np.asarray(res.get_shots(cbits=program_bits(1, stored.shape[1])), dtype=np.uint8)
+        want = item["shots_requested"]
+        if table.shape[1] != stored.shape[1] or table.shape[0] <= stored.shape[0] or (want is not None and table.shape[0] != want):
+            log(f"job {item['name']}: the service returns {table.shape[0]} shots (stored {stored.shape[0]}, requested {want}); not replaced")
+            continue
+        prefix = bool(np.array_equal(table[:stored.shape[0]], stored))
+        os.makedirs(os.path.join(cache_dir, "incomplete"), exist_ok=True)
+        os.replace(path, os.path.join(cache_dir, "incomplete", item["key"] + ".npz"))
+        _store_table(path, table)
+        rec = dict(event="redownloaded", name=item["name"], job_id=item["job_id"], key=item["key"],
+                   shots_before=int(stored.shape[0]), shots_after=int(table.shape[0]), stored_shots_are_the_first_shots=prefix,
+                   commit=program.get("commit"), modified=bool(program.get("modified")),
+                   time=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+        with open(os.path.join(cache_dir, "jobs.jsonl"), "a") as f:
+            f.write(json.dumps(rec) + "\n")
+        log(f"job {item['name']}: {rec['shots_before']} -> {rec['shots_after']} shots"
+            + (" (the stored shots are the first shots of the complete result)" if prefix else " (the stored shots differ from the first shots)"))
+        done.append(rec)
+    return done
 
 
 class _ProgramExecutor:
@@ -295,9 +423,11 @@ class NexusExecutor(_ProgramExecutor):
                  max_programs_per_job: int = 300, timeout: float | None = None, cost_margin: float = 2.0,
                  io_threads: int = 4, poll_interval: float = 20.0, max_poll_failures: int = 90,
                  segments_schedule=(), cached_only: bool = False, stall_timeout: float | None = None,
-                 max_job_failures: int = 3):
+                 max_job_failures: int = 3, download_attempts: int = 8, download_retry_delay: float = 20.0):
         super().__init__(segments, segments_schedule)
         self.max_job_failures = max_job_failures    # failed jobs of the same program before the run stops for good
+        self.download_attempts = download_attempts          # downloads of a result that holds too few shots
+        self.download_retry_delay = download_retry_delay    # seconds between two such downloads
         self.stall_timeout = stall_timeout          # seconds after which a request without answer ends the process
         self._active, self._active_lock, self._guard = {}, threading.Lock(), None
         self.cached_only = cached_only              # never submit: fail if a result is not in the cache
@@ -411,8 +541,13 @@ class NexusExecutor(_ProgramExecutor):
             time.sleep(self.poll_interval)
 
     def describe(self) -> dict:
-        return dict(kind="Quantinuum Nexus", project=self.project_name,
-                    device_profiles=sorted(self._devices), cache=provenance._relative(self.cache_dir))
+        out = dict(kind="Quantinuum Nexus", project=self.project_name,
+                   device_profiles=sorted(self._devices), cache=provenance._relative(self.cache_dir))
+        again = redownloaded(self.cache_dir)
+        if again:
+            out["results_downloaded_again"] = [f"{r.get('name')}: {r.get('shots_before')} -> {r.get('shots_after')} shots ({r.get('time')})"
+                                               for r in again]
+        return out
 
     # -- helpers
     def _config(self, device: DeviceProfile):
@@ -575,7 +710,7 @@ class NexusExecutor(_ProgramExecutor):
             jobs.append(dict(job=job, part=part, ref_ids=ref_ids, name=name, source="submitted"))
             self._log(dict(event="submitted", name=name, job_id=str(job.id), device=asdict(device),
                            shots=sorted(set(shots)), circuit_shots=int(sum(len(specs[j][1]) * specs[j][2] for j in part)),
-                           programs=len(part), keys=[keys[j] for j in part], ref_ids=ref_ids,
+                           programs=len(part), keys=[keys[j] for j in part], ref_ids=ref_ids, program_shots=shots,
                            commit=self._program.get("commit"), modified=bool(self._program.get("modified")),
                            time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
         return dict(keys=keys, jobs=jobs, specs=specs)
@@ -602,16 +737,10 @@ class NexusExecutor(_ProgramExecutor):
                     raise NexusJobFatal(f"the programs of job {item['name']} failed {failures} times ({exc}); "
                                         "they are not submitted again automatically") from exc
                 raise
-            with self._request(f"results of {item['name']}"):
-                by_input = {str(r.get_input().id): r for r in qnx.jobs.results(item["job"])}
-
-            def fetch(pair, _name=item["name"]):
+            def fetch(pair, _item=item):
                 j, ref_id = pair
-                with self._request(f"download of {_name}"):
-                    res = by_input[ref_id].download_result()
-                bits = program_bits(specs[j][0].n, len(specs[j][1]))
-                table = np.asarray(res.get_shots(cbits=bits), dtype=np.uint8)
-                np.savez_compressed(os.path.join(self.cache_dir, handle["keys"][j] + ".npz"), shots=table)
+                table = self._download(_item["job"], _item["name"], ref_id, specs[j], handle["keys"][j])
+                _store_table(os.path.join(self.cache_dir, handle["keys"][j] + ".npz"), table)
 
             self._map(fetch, zip(item["part"], item["ref_ids"]))
             try:
@@ -623,4 +752,39 @@ class NexusExecutor(_ProgramExecutor):
             self._log(dict(event="completed", name=item["name"], job_id=str(item["job"].id), cost=cost,
                            time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
             self._note_jobs([handle["keys"][j] for j in item["part"]], item.get("source", "submitted"))
-        return [np.load(os.path.join(self.cache_dir, k + ".npz"))["shots"].astype(np.int64) for k in handle["keys"]]
+        return [self._stored_table(k, spec) for k, spec in zip(handle["keys"], specs)]
+
+    def _download(self, job, name: str, ref_id: str, spec, key: str) -> np.ndarray:
+        """Shot table of one program of a completed job, with the requested number of shots.
+
+        The result is downloaded again while it holds fewer shots than requested (the service may still be
+        assembling it).  If it stays incomplete, :class:`NexusIncompleteResult` is raised and nothing is stored.
+        """
+        template, rows, shots = spec
+        bits = program_bits(template.n, len(rows))
+        table = None
+        for attempt in range(1, self.download_attempts + 1):
+            with self._request(f"results of {name}"):
+                by_input = {str(r.get_input().id): r for r in self.qnx.jobs.results(job)}
+            with self._request(f"download of {name}"):
+                res = by_input[ref_id].download_result()
+            table = np.asarray(res.get_shots(cbits=bits), dtype=np.uint8)
+            if table.shape == (int(shots), len(bits)):
+                return table
+            self._log(dict(event="incomplete-result", name=name, job_id=str(job.id), key=key, shots_returned=int(table.shape[0]),
+                           shots_requested=int(shots), attempt=attempt, time=time.strftime("%Y-%m-%dT%H:%M:%S%z")))
+            if attempt < self.download_attempts:
+                time.sleep(self.download_retry_delay)
+        raise NexusIncompleteResult(f"the result of job {name} holds {table.shape[0]} of {int(shots)} shots after "
+                                    f"{self.download_attempts} downloads; nothing was stored, and the job stays re-attachable")
+
+    def _stored_table(self, key: str, spec) -> np.ndarray:
+        """A shot table of the cache, checked against the program that it belongs to."""
+        template, rows, shots = spec
+        table = np.load(os.path.join(self.cache_dir, key + ".npz"))["shots"]
+        expected = (int(shots), template.n * len(rows))
+        if table.shape != expected:
+            raise NexusIncompleteResult(
+                f"the stored result {key[:12]} in {provenance._relative(self.cache_dir)} has the shape {table.shape} instead of "
+                f"{expected} (shots, bits); scripts/nexus_redownload.py downloads the result of its job again")
+        return table.astype(np.int64)

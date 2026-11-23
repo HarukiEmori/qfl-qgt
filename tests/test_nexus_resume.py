@@ -41,6 +41,9 @@ class FakeQnx(types.ModuleType):
         self.broken = set()        # ids of jobs that end in an error
         self.default_state = "COMPLETED"   # final status of the jobs that are not in ``broken``
         self.offline = False       # the service does not answer
+        self.partial = 0           # number of downloads that still return only the first ``partial_rows`` shots
+        self.partial_rows = 2
+        self.pattern = False       # shot tables with pseudo-random bits instead of zeros
         fake = self
 
         class projects:
@@ -70,8 +73,14 @@ class FakeQnx(types.ModuleType):
             def results(job):
                 out = []
                 for ref, shots in zip(job.programs, job.n_shots):
-                    def get_shots(cbits, _shots=shots):
-                        return np.zeros((_shots, len(cbits)), dtype=int)
+                    def get_shots(cbits, _shots=shots, _ref=ref):
+                        table = np.zeros((_shots, len(cbits)), dtype=int)
+                        if fake.pattern:
+                            table = np.random.default_rng(_ref.id.int % 2**32).integers(0, 2, size=table.shape)
+                        if fake.partial > 0:               # the service is still assembling the result
+                            fake.partial -= 1
+                            table = table[:fake.partial_rows]
+                        return table
                     result = types.SimpleNamespace(get_shots=get_shots)
                     out.append(types.SimpleNamespace(get_input=lambda _r=ref: _r, download_result=lambda _x=result: _x))
                 return out
@@ -399,3 +408,149 @@ def test_stall_guard_ends_a_process_whose_request_does_not_return(tmp_path):
     assert "first request returned" in out.stdout and "not reached" not in out.stdout
     assert "blocked request" in out.stderr
 
+
+
+def _events(cache):
+    with open(os.path.join(cache, "jobs.jsonl")) as f:
+        return [json.loads(line) for line in f]
+
+
+def _shots_per_circuit(req):
+    return req.counts.sum(axis=(0, 2)).tolist()
+
+
+def test_an_incomplete_result_is_downloaded_again(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    fake.pattern = True
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, incomplete_tables
+
+    device = DeviceProfile("reimei-E", 40.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2, io_threads=1, download_retry_delay=0.0)
+    _, reqs = _requests(device)
+    fake.partial = 2                                   # the first two downloads return 2 of the 6 shots
+    ex.run(reqs)
+    assert _shots_per_circuit(reqs[0]) == [6, 6, 6] and _shots_per_circuit(reqs[1]) == [6, 6]
+    events = _events(cache)
+    short = [e for e in events if e["event"] == "incomplete-result"]
+    assert [(e["shots_returned"], e["shots_requested"], e["attempt"]) for e in short] == [(2, 6, 1), (2, 6, 2)]
+    assert [e["event"] for e in events if e["event"] != "incomplete-result"] == ["submitted", "completed"]
+    assert events[0]["program_shots"] == [6, 6, 6]
+    assert incomplete_tables(cache) == [] and len(fake.started) == 1
+
+
+def test_a_result_that_stays_incomplete_is_not_stored_and_its_job_stays_attachable(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    fake.pattern = True
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, NexusIncompleteResult
+
+    device = DeviceProfile("reimei-E", 40.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2, io_threads=1, download_attempts=3, download_retry_delay=0.0)
+    _, reqs = _requests(device)
+    fake.partial = 10 ** 6
+    with pytest.raises(NexusIncompleteResult):
+        ex.run(reqs)
+    assert issubclass(NexusIncompleteResult, RuntimeError)
+    assert [f for f in os.listdir(cache) if f.endswith(".npz")] == []         # nothing was stored
+    kinds = [e["event"] for e in _events(cache)]
+    assert kinds == ["submitted"] + ["incomplete-result"] * 3                 # the job is not recorded as completed
+
+    # the service has assembled the result: the next run re-attaches to the same job and submits nothing
+    fake.partial = 0
+    ex2 = NexusExecutor("test", cache, segments=2, io_threads=1, download_retry_delay=0.0)
+    _, reqs2 = _requests(device)
+    ex2.run(reqs2)
+    assert len(fake.started) == 1 and len(fake.fetched) == 1
+    assert _shots_per_circuit(reqs2[0]) == [6, 6, 6] and _shots_per_circuit(reqs2[1]) == [6, 6]
+    assert [e["event"] for e in _events(cache)][-2:] == ["reattached", "completed"]
+
+
+def test_a_stored_table_with_too_few_shots_is_reported_and_repaired(tmp_path, monkeypatch):
+    import importlib.util
+
+    fake = FakeQnx()
+    fake.pattern = True
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, NexusIncompleteResult, incomplete_tables, redownload_incomplete
+
+    device = DeviceProfile("reimei-E", 40.0)
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2)
+    _, reqs = _requests(device)
+    ex.run(reqs)
+    assert incomplete_tables(cache) == []
+
+    # a table that holds only the first two shots, as a download right after the completion of the job stored it
+    record = _events(cache)[0]
+    key = record["keys"][1]
+    path = os.path.join(cache, key + ".npz")
+    full = np.load(path)["shots"]
+    np.savez_compressed(path, shots=full[:2])
+    found = incomplete_tables(cache)
+    assert [(i["key"], i["shots_stored"], i["shots_requested"], i["job_id"]) for i in found] == [(key, 2, 6, record["job_id"])]
+
+    # records written before the shots of every program were logged are checked through the shots of the job
+    lines = open(os.path.join(cache, "jobs.jsonl")).read().splitlines()
+    old = dict(json.loads(lines[0]))
+    del old["program_shots"]
+    for shots in ([6], 6):
+        with open(os.path.join(cache, "jobs.jsonl"), "w") as f:
+            f.write("\n".join([json.dumps(dict(old, shots=shots))] + lines[1:]) + "\n")
+        assert [(i["key"], i["shots_stored"], i["shots_requested"]) for i in incomplete_tables(cache)] == [(key, 2, 6)]
+    with open(os.path.join(cache, "jobs.jsonl"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    # the executor refuses the table, and submits nothing in its place
+    ex2 = NexusExecutor("test", cache, segments=2)
+    _, reqs2 = _requests(device)
+    with pytest.raises(NexusIncompleteResult):
+        ex2.run(reqs2)
+    assert len(fake.started) == 1
+
+    # the command-line check reports it without a connection ...
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    spec = importlib.util.spec_from_file_location("nexus_redownload_cli", os.path.join(root, "scripts", "nexus_redownload.py"))
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+    assert cli.main(["--cache", cache]) == 1 and fake.fetched == []
+
+    # ... and the repair reads the result of the same job again
+    done = redownload_incomplete(cache, qnx=fake, log=lambda *a: None)
+    assert [(r["shots_before"], r["shots_after"], r["stored_shots_are_the_first_shots"]) for r in done] == [(2, 6, True)]
+    assert fake.fetched == [record["job_id"]] and len(fake.started) == 1
+    assert np.array_equal(np.load(path)["shots"], full)
+    assert np.array_equal(np.load(os.path.join(cache, "incomplete", key + ".npz"))["shots"], full[:2])
+    assert incomplete_tables(cache) == [] and cli.main(["--cache", cache]) == 0
+    assert redownload_incomplete(cache, qnx=fake) == []                       # nothing is left to repair
+
+    ex3 = NexusExecutor("test", cache, segments=2)
+    _, reqs3 = _requests(device)
+    ex3.run(reqs3)
+    assert np.array_equal(reqs3[0].counts, reqs[0].counts) and np.array_equal(reqs3[1].counts, reqs[1].counts)
+    again = ex3.describe()["results_downloaded_again"]
+    assert len(again) == 1 and "2 -> 6 shots" in again[0]
+    assert len(fake.started) == 1 and ex3.qnx is None
+
+
+def test_a_result_that_is_still_incomplete_is_not_used_for_a_repair(tmp_path, monkeypatch):
+    fake = FakeQnx()
+    fake.pattern = True
+    monkeypatch.setitem(sys.modules, "qnexus", fake)
+    from qfedqgt.nexus import DeviceProfile, NexusExecutor, incomplete_tables, redownload_incomplete
+
+    cache = str(tmp_path / "cache")
+    ex = NexusExecutor("test", cache, segments=2)
+    _, reqs = _requests(DeviceProfile("reimei-E", 40.0))
+    ex.run(reqs)
+    key = _events(cache)[0]["keys"][0]
+    path = os.path.join(cache, key + ".npz")
+    full = np.load(path)["shots"]
+    np.savez_compressed(path, shots=full[:2])
+    fake.partial, fake.partial_rows = 1, 4             # the service returns 4 of the 6 shots
+    messages = []
+    assert redownload_incomplete(cache, qnx=fake, log=messages.append) == []
+    assert np.array_equal(np.load(path)["shots"], full[:2]) and not os.path.exists(os.path.join(cache, "incomplete"))
+    assert len(incomplete_tables(cache)) == 1 and "not replaced" in messages[0]
